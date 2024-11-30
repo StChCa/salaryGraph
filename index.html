@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple JS Project</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <script src="main.js"></script>
+
+    <h1>salaryGraph</h1>
+    <h4>No Inflation.</h4>
+    <div id="cpi-salary-graph">
+        <canvas id="salaryGraph" width="50vw" height="30vh"></canvas>
+    </div>
+
+    <h1>cpiSalaryGraph</h1>
+    <h4>Inflation is not reset.</h4>
+    <div id="cpi-salary-graph">
+        <canvas id="cpiSalaryGraph" width="50vw" height="30vh"></canvas>
+    </div>
+
+    <h1>inflationResetSalaryGraph</h1>
+    <h4>Inflation is reset for each new salary entry.</h4>
+    <div id="inflation-reset-salary-graph">
+        <canvas id="inflationResetSalaryGraph" width="50vw" height="30vh"></canvas>
+    </div>
+
+    <h1>CPI Over Time</h1>
+    <div id="cpi-data">
+        <canvas id="cpiGraph" width="50vw" height="30vh"></canvas>
+    </div>
+
+    <script src="CPI.js"></script>
+</body>
+</html>
