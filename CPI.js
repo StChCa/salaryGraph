@@ -1,4 +1,8 @@
 
+// https://www.bls.gov/cpi/data.htm
+// All urban consumers
+// Top Picks
+// U.S. city average, All items - CUUR0000SA0
 const CPI = {
     1913: { Jan: 9.8, Feb: 9.8, Mar: 9.8, Apr: 9.8, May: 9.7, Jun: 9.8, Jul: 9.9, Aug: 9.9, Sep: 10.0, Oct: 10.0, Nov: 10.1, Dec: 10.0 },
     1914: { Jan: 10.0, Feb: 9.9, Mar: 9.9, Apr: 9.8, May: 9.9, Jun: 9.9, Jul: 10.0, Aug: 10.2, Sep: 10.2, Oct: 10.1, Nov: 10.2, Dec: 10.1 },
@@ -111,5 +115,6 @@ const CPI = {
     2021: { Jan: 261.582, Feb: 263.014, Mar: 264.877, Apr: 267.054, May: 269.195, Jun: 271.696, Jul: 273.003, Aug: 273.567, Sep: 274.310, Oct: 276.589, Nov: 277.948, Dec: 278.802 },
     2022: { Jan: 281.148, Feb: 283.716, Mar: 287.504, Apr: 289.109, May: 292.296, Jun: 296.311, Jul: 296.276, Aug: 296.171, Sep: 296.808, Oct: 298.012, Nov: 297.711, Dec: 296.797 },
     2023: { Jan: 299.170, Feb: 300.840, Mar: 301.836, Apr: 303.363, May: 304.127, Jun: 305.109, Jul: 305.691, Aug: 307.026, Sep: 307.789, Oct: 307.671, Nov: 307.051, Dec: 306.746 },
-    2024: { Jan: 308.417, Feb: 310.326, Mar: 312.332, Apr: 313.548, May: 314.069, Jun: 314.175, Jul: 314.540, Aug: 314.796, Sep: 315.301, Oct: 315.664, },
+    2024: { Jan: 308.417, Feb: 310.326, Mar: 312.332, Apr: 313.548, May: 314.069, Jun: 314.175, Jul: 314.540, Aug: 314.796, Sep: 315.301, Oct: 315.664, Nov: 315.493, Dec: 315.605 },
+    2025: { Jan: 317.671, },
 };
