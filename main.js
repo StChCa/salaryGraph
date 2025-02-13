@@ -60,6 +60,11 @@ const Salaries = [
         endDate: '2024-11-01',
         salary: 105472.49,
     },
+    {
+        startDate: '2024-12-01',
+        endDate: '2025-02-01',
+        salary: 109691.39,
+    },
 ];
 
 function displayCPI() {
@@ -237,7 +242,7 @@ function displayInflationResetSalaryGraph(salaries) {
 
     });
     
-    const ctx = document.getElementById('cpiSalaryGraph').getContext('2d');
+    const ctx = document.getElementById('inflation-reset-salary-graph').getContext('2d');
     
     // Define the labels and CPI data
     const labels = rangeLabels;
@@ -293,7 +298,7 @@ function displayInflationSalaryGraph(salaries) {
 
     });
     
-    const ctx = document.getElementById('inflationResetSalaryGraph').getContext('2d');
+    const ctx = document.getElementById('no-reset-salary-graph').getContext('2d');
     
     // Define the labels and CPI data
     const labels = rangeLabels;
