@@ -23,16 +23,21 @@
             </div>
         </header>
 
+        <div id="viewOnlyBanner" class="view-only-banner hidden" role="status" aria-live="polite">
+            <span>View only mode — shared data snapshot</span>
+            <button id="returnToMyDataButton" type="button" class="secondary-button">Return to my data</button>
+        </div>
+
         <div class="view-toggle" aria-label="Chart view toggle">
             <button type="button" class="is-active" data-view="dollar">Dollar View</button>
             <button type="button" data-view="normalized">Percentage / Normalized View</button>
         </div>
 
         <div id="savePrompt" class="save-prompt hidden" role="alert">
-            <span>Save this salary history to this browser?</span>
+            <span id="savePromptText">Save this salary history to this browser?</span>
             <div>
-                <button id="saveFromUrlButton" type="button">Yes</button>
-                <button id="dismissSavePromptButton" type="button" class="secondary-button">No</button>
+                <button id="saveFromUrlButton" type="button">Use shared data</button>
+                <button id="dismissSavePromptButton" type="button" class="secondary-button">Keep my data</button>
             </div>
         </div>
 

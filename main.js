@@ -4,6 +4,8 @@ const STORAGE_KEY = 'salaryData-v1';
 let salaryData = [];
 let currentViewMode = 'dollar';
 let currentChart = null;
+let isSharedSnapshotMode = false;
+let pendingSharedData = [];
 
 /*
 const Salaries = [
@@ -94,11 +96,23 @@ const starterSalaryData = [
 document.addEventListener('DOMContentLoaded', () => {
     bindAppEvents();
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const shareMode = urlParams.get('shareMode');
+    const urlViewMode = urlParams.get('viewMode');
+    if (urlViewMode === 'normalized' || urlViewMode === 'dollar') {
+        currentViewMode = urlViewMode;
+    } else if (shareMode === 'anonymized') {
+        currentViewMode = 'normalized';
+    }
+
     const urlData = getUrlPayload();
     if (urlData && urlData.length > 0) {
+        isSharedSnapshotMode = true;
+        pendingSharedData = urlData;
         salaryData = urlData;
-        showSavePrompt();
     } else {
+        isSharedSnapshotMode = false;
+        pendingSharedData = [];
         salaryData = loadFromLocalStorage();
         if (!salaryData.length) {
             salaryData = [];
@@ -116,6 +130,11 @@ function bindAppEvents() {
     });
 
     document.getElementById('salaryForm').addEventListener('submit', (event) => {
+        if (isSharedSnapshotMode) {
+            event.preventDefault();
+            return;
+        }
+
         event.preventDefault();
         const idField = document.getElementById('salaryId');
         const dateField = document.getElementById('salaryDate');
@@ -158,6 +177,10 @@ function bindAppEvents() {
     });
 
     document.getElementById('salaryList').addEventListener('click', (event) => {
+        if (isSharedSnapshotMode) {
+            return;
+        }
+
         const button = event.target.closest('button[data-action]');
         if (!button) {
             return;
@@ -187,6 +210,10 @@ function bindAppEvents() {
     });
 
     document.getElementById('salaryList').addEventListener('input', (event) => {
+        if (isSharedSnapshotMode) {
+            return;
+        }
+
         const target = event.target;
         const { id, field } = target.dataset;
         if (!id || !field) {
@@ -225,6 +252,14 @@ function bindAppEvents() {
 
     document.querySelectorAll('.view-toggle button').forEach(button => {
         button.addEventListener('click', () => {
+            if (isAnonymizedShareLink() && button.dataset.view === 'dollar') {
+                showShareStatus('Anonymized share links stay in percentage view.');
+                currentViewMode = 'normalized';
+                renderViewButtons();
+                renderChart();
+                return;
+            }
+
             currentViewMode = button.dataset.view;
             renderViewButtons();
             renderChart();
@@ -237,6 +272,20 @@ function bindAppEvents() {
     });
 
     document.getElementById('dismissSavePromptButton').addEventListener('click', hideSavePrompt);
+
+    document.getElementById('returnToMyDataButton').addEventListener('click', () => {
+        const confirmed = window.confirm('Return to your saved data? You will need to open the shared link again if you want to view this snapshot later.');
+        if (!confirmed) {
+            return;
+        }
+
+        const nextUrl = new URL(window.location.href);
+        nextUrl.searchParams.delete('salaryData');
+        nextUrl.searchParams.delete('shareMode');
+        nextUrl.searchParams.delete('viewMode');
+        nextUrl.hash = '';
+        window.location.href = nextUrl.toString();
+    });
 
     document.getElementById('shareButton').addEventListener('click', () => {
         document.getElementById('shareModal').classList.remove('hidden');
@@ -281,8 +330,18 @@ function resetSalaryForm() {
 }
 
 function renderAll() {
+    const viewOnlyBanner = document.getElementById('viewOnlyBanner');
+    const returnToMyDataButton = document.getElementById('returnToMyDataButton');
+    if (viewOnlyBanner) {
+        viewOnlyBanner.classList.toggle('hidden', !isSharedSnapshotMode);
+    }
+    if (returnToMyDataButton) {
+        returnToMyDataButton.classList.toggle('hidden', !isSharedSnapshotMode);
+    }
+
     renderSalaryList();
     renderViewButtons();
+    applyReadOnlyUi();
     if (!salaryData.length) {
         const ctx = document.getElementById('salaryGraph');
         if (ctx && currentChart) {
@@ -302,10 +361,37 @@ function renderAll() {
     renderChart();
 }
 
+function applyReadOnlyUi() {
+    const form = document.getElementById('salaryForm');
+    if (form) {
+        const controls = form.querySelectorAll('input, button, select');
+        controls.forEach(control => {
+            if (control.id === 'salarySubmitButton' || control.id === 'cancelEditButton') {
+                control.disabled = isSharedSnapshotMode;
+            } else if (control.tagName === 'INPUT' || control.tagName === 'SELECT') {
+                control.disabled = isSharedSnapshotMode;
+            }
+        });
+    }
+
+    const listButtons = document.querySelectorAll('#salaryList button[data-action]');
+    listButtons.forEach(button => {
+        button.disabled = isSharedSnapshotMode;
+    });
+}
+
+function isAnonymizedShareLink() {
+    return new URLSearchParams(window.location.search).get('shareMode') === 'anonymized';
+}
+
 function renderViewButtons() {
+    const isAnonymizedLink = isAnonymizedShareLink();
     document.querySelectorAll('.view-toggle button').forEach(button => {
         const isSelected = button.dataset.view === currentViewMode;
+        const isDollarButton = button.dataset.view === 'dollar';
         button.classList.toggle('is-active', isSelected);
+        button.disabled = isAnonymizedLink && isDollarButton;
+        button.setAttribute('aria-disabled', String(isAnonymizedLink && isDollarButton));
     });
 }
 
@@ -417,20 +503,44 @@ function renderSalaryList() {
     const maxMonth = getCurrentMonthString();
     list.innerHTML = salaryData.map(entry => `
         <div class="salary-row">
-            <input type="month" data-id="${entry.id}" data-field="startDate" value="${entry.startDate}" max="${maxMonth}" aria-label="Salary start month">
-            <select data-id="${entry.id}" data-field="payType" aria-label="Salary type">
+            <input type="month" data-id="${entry.id}" data-field="startDate" value="${entry.startDate}" max="${maxMonth}" aria-label="Salary start month" ${isSharedSnapshotMode ? 'disabled' : ''}>
+            <select data-id="${entry.id}" data-field="payType" aria-label="Salary type" ${isSharedSnapshotMode ? 'disabled' : ''}>
                 <option value="salary" ${entry.payType === 'salary' ? 'selected' : ''}>Salary</option>
                 <option value="hourly_full_time" ${entry.payType === 'hourly_full_time' ? 'selected' : ''}>Hourly (Full Time)</option>
                 <option value="hourly_part_time" ${entry.payType === 'hourly_part_time' ? 'selected' : ''}>Hourly (Part Time)</option>
             </select>
-            <input type="number" min="0" step="0.01" data-id="${entry.id}" data-field="amount" value="${Number(entry.amount).toFixed(2)}" aria-label="Salary amount">
-            ${entry.payType === 'hourly_part_time' ? `<input type="number" min="1" step="0.5" data-id="${entry.id}" data-field="hoursPerWeek" value="${Number(entry.hoursPerWeek || 0).toFixed(1)}" aria-label="Hours per week">` : '<span class="muted-label">-</span>'}
+            <input type="number" min="0" step="0.01" data-id="${entry.id}" data-field="amount" value="${Number(entry.amount).toFixed(2)}" aria-label="Salary amount" ${isSharedSnapshotMode ? 'disabled' : ''}>
+            ${entry.payType === 'hourly_part_time' ? `<input type="number" min="1" step="0.5" data-id="${entry.id}" data-field="hoursPerWeek" value="${Number(entry.hoursPerWeek || 0).toFixed(1)}" aria-label="Hours per week" ${isSharedSnapshotMode ? 'disabled' : ''}>` : '<span class="muted-label">-</span>'}
             <div class="salary-actions">
-                <button type="button" data-action="edit" data-id="${entry.id}">Edit</button>
-                <button type="button" class="delete-button" data-action="delete" data-id="${entry.id}">Delete</button>
+                <button type="button" data-action="edit" data-id="${entry.id}" ${isSharedSnapshotMode ? 'disabled' : ''}>Edit</button>
+                <button type="button" class="delete-button" data-action="delete" data-id="${entry.id}" ${isSharedSnapshotMode ? 'disabled' : ''}>Delete</button>
             </div>
         </div>
     `).join('');
+}
+
+function encodeSharePayload(data) {
+    const json = JSON.stringify(data);
+    const bytes = new TextEncoder().encode(json);
+    let binary = '';
+    bytes.forEach((byte) => {
+        binary += String.fromCharCode(byte);
+    });
+
+    return btoa(binary)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/g, '');
+}
+
+function decodeSharePayload(payload) {
+    const normalizedPayload = payload
+        .replace(/-/g, '+')
+        .replace(/_/g, '/');
+    const paddedPayload = normalizedPayload + '='.repeat((4 - (normalizedPayload.length % 4)) % 4);
+    const binary = atob(paddedPayload);
+    const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+    return JSON.parse(new TextDecoder().decode(bytes));
 }
 
 function getUrlPayload() {
@@ -456,7 +566,7 @@ function getUrlPayload() {
 function serializeData(data, anonymize = false) {
     const normalizedData = sanitizeSalaryData(data);
     if (!normalizedData.length) {
-        return btoa(JSON.stringify([]));
+        return encodeSharePayload([]);
     }
 
     const payload = anonymize ? normalizedData.map((entry, index) => {
@@ -468,13 +578,17 @@ function serializeData(data, anonymize = false) {
         };
     }) : normalizedData;
 
-    return btoa(JSON.stringify(payload));
+    return encodeSharePayload(payload);
 }
 
 function deserializeData(urlHash) {
     try {
-        const decoded = atob(urlHash.replace(/^#/, ''));
-        const parsed = JSON.parse(decoded);
+        const cleanedValue = String(urlHash || '').replace(/^#/, '').trim();
+        if (!cleanedValue) {
+            return [];
+        }
+
+        const parsed = decodeSharePayload(cleanedValue);
         if (!Array.isArray(parsed)) {
             return [];
         }
@@ -485,10 +599,14 @@ function deserializeData(urlHash) {
     }
 }
 
-function showSavePrompt() {
+function showSavePrompt(message = 'Save this salary history to this browser?') {
     const prompt = document.getElementById('savePrompt');
+    const promptText = document.getElementById('savePromptText');
     if (prompt) {
         prompt.classList.remove('hidden');
+    }
+    if (promptText) {
+        promptText.textContent = message;
     }
 }
 
@@ -516,11 +634,17 @@ function updateShareUi() {
 
 async function copyShareLink(exactMode) {
     const payload = serializeData(salaryData, exactMode ? false : true);
-    const baseUrl = `${window.location.origin}${window.location.pathname}`;
-    const shareUrl = `${baseUrl}#${payload}`;
+    const shareUrl = new URL(window.location.href);
+    shareUrl.hash = '';
+    shareUrl.searchParams.delete('salaryData');
+    shareUrl.searchParams.delete('shareMode');
+    shareUrl.searchParams.delete('viewMode');
+    shareUrl.searchParams.set('salaryData', payload);
+    shareUrl.searchParams.set('shareMode', exactMode ? 'exact' : 'anonymized');
+    shareUrl.searchParams.set('viewMode', exactMode ? 'dollar' : 'normalized');
 
     try {
-        await navigator.clipboard.writeText(shareUrl);
+        await navigator.clipboard.writeText(shareUrl.toString());
         const statusText = exactMode ? 'Exact link copied to clipboard.' : 'Anonymized share link copied to clipboard.';
         showShareStatus(statusText);
     } catch (error) {
