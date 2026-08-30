@@ -731,7 +731,7 @@ function deserializeData(urlHash) {
     }
 }
 
-function showSavePrompt(message = 'Save this salary history to this browser?') {
+function showSavePrompt(message = 'Save this salary history to this browser on this device?\nThis stays in local storage unless you choose to share it.') {
     const prompt = document.getElementById('savePrompt');
     const promptText = document.getElementById('savePromptText');
     if (prompt) {
