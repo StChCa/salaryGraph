@@ -558,6 +558,14 @@ function displayCombinedSalaryGraph(salaries, viewMode = currentViewMode) {
         subtitle.textContent = `No inflation vs. ${earliestDate} dollars.`;
     }
 
+    const firstSalaryMonth = sortedSalaries[0]?.startDate;
+    const firstSalaryMonthLabel = firstSalaryMonth
+        ? new Date(`${firstSalaryMonth}-01T00:00:00`).toLocaleDateString('en-US', {
+            month: 'long',
+            year: 'numeric'
+        })
+        : 'first salary';
+
     const currentMonth = getCurrentMonthString();
     const currentMonthParts = currentMonth.split('-');
     const currentYear = Number(currentMonthParts[0]);
@@ -665,7 +673,9 @@ function displayCombinedSalaryGraph(salaries, viewMode = currentViewMode) {
                     },
                     title: {
                         display: true,
-                        text: viewMode === 'normalized' ? 'Change vs first salary (%)' : 'Dollars'
+                        text: viewMode === 'normalized'
+                            ? `Change vs ${firstSalaryMonthLabel} (%)`
+                            : `${firstSalaryMonthLabel} Dollars`
                     }
                 }
             }
