@@ -62,8 +62,18 @@ const Salaries = [
     },
     {
         startDate: '2024-12-01',
-        endDate: '2025-02-01',
+        endDate: '2025-11-01',
         salary: 109691.39,
+    },
+    {
+        startDate: '2025-12-01',
+        endDate: '2026-05-01',
+        salary: 113000.39,
+    },
+    {
+        startDate: '2026-06-01',
+        endDate: '2026-08-01',
+        salary: 124800.39,
     },
 ];
 
@@ -75,11 +85,45 @@ function displayCPI() {
 }
 
 function cpiHasValue(year, month) {
-    return CPI[year] && CPI[year][month];
+    return cpiForYearMonth(year, month) !== null;
 }
 
 function cpiForYearMonth(year, month) {
-    return CPI[year][month];
+    const numericYear = Number(year);
+    const yearData = CPI[numericYear];
+
+    if (yearData && yearData[month] !== undefined) {
+        return yearData[month];
+    }
+
+    const monthIndex = MONTHS.indexOf(month);
+    if (yearData && monthIndex >= 0) {
+        for (let i = monthIndex; i >= 0; i--) {
+            const previousMonth = MONTHS[i];
+            if (yearData[previousMonth] !== undefined) {
+                return yearData[previousMonth];
+            }
+        }
+    }
+
+    const years = Object.keys(CPI)
+        .map(Number)
+        .filter(yearValue => yearValue <= numericYear)
+        .sort((a, b) => b - a);
+
+    for (const previousYear of years) {
+        const previousYearData = CPI[previousYear];
+        if (!previousYearData) continue;
+
+        for (let i = MONTHS.length - 1; i >= 0; i--) {
+            const previousMonth = MONTHS[i];
+            if (previousYearData[previousMonth] !== undefined) {
+                return previousYearData[previousMonth];
+            }
+        }
+    }
+
+    return null;
 }
 
 function getCPIForRange(startYear, startMonth, endYear, endMonth) {
@@ -87,15 +131,15 @@ function getCPIForRange(startYear, startMonth, endYear, endMonth) {
     const startMonthIdx = MONTHS.indexOf(startMonth);
     const endMonthIdx = MONTHS.indexOf(endMonth);
 
-
     for (let i = startYear; i <= endYear; i++) {
-        const yearCPIs = CPI[i];
-
         let monthStart = (i === startYear) ? startMonthIdx : 0;
         let monthEnd = (i === endYear) ? endMonthIdx : MONTHS.length - 1;
 
         for (let j = monthStart; j <= monthEnd; j++) {
-            cpis.push(yearCPIs[MONTHS[j]]);
+            const value = cpiForYearMonth(i, MONTHS[j]);
+            if (value !== null) {
+                cpis.push(value);
+            }
         }
     }
     return cpis;
@@ -106,10 +150,12 @@ function getFixedCPIArray(startYear, startMonth, endYear, endMonth) {
     const startMonthIdx = MONTHS.indexOf(startMonth);
     const endMonthIdx = MONTHS.indexOf(endMonth);
 
-    let day1CPI = cpiForYearMonth(startYear, startMonth);
-    for (let i = startYear; i <= endYear; i++) {
-        const yearCPIs = CPI[i];
+    const day1CPI = cpiForYearMonth(startYear, startMonth);
+    if (day1CPI === null) {
+        return cpis;
+    }
 
+    for (let i = startYear; i <= endYear; i++) {
         let monthStart = (i === startYear) ? startMonthIdx : 0;
         let monthEnd = (i === endYear) ? endMonthIdx : MONTHS.length - 1;
 
@@ -121,12 +167,11 @@ function getFixedCPIArray(startYear, startMonth, endYear, endMonth) {
 }
 
 function inflationDifference(startCPI, endCPI) {
-    var subtract = endCPI - startCPI;
-    var modifier = 1- subtract;
-    var result = modifier / startCPI;
-    var actual = (1 - (endCPI - startCPI) / startCPI)
+    if (startCPI === null || startCPI === undefined || startCPI === 0) {
+        return 0;
+    }
 
-    return actual;
+    return (1 - (endCPI - startCPI) / startCPI);
 }
 
 function inflationAdjust(value, startCPI, endCPI) {
@@ -134,10 +179,14 @@ function inflationAdjust(value, startCPI, endCPI) {
 }
 
 function getEffectiveSalaryValues(startSalary, cpiForRange) {
+    if (!cpiForRange || cpiForRange.length === 0) {
+        return [];
+    }
 
     const effectiveSalary = [];
     for (let i = 0; i < cpiForRange.length; i++) {
-        effectiveSalary.push(startSalary * inflationDifference(cpiForRange[0], cpiForRange[i]));
+        const startCPI = cpiForRange[0];
+        effectiveSalary.push(startSalary * inflationDifference(startCPI, cpiForRange[i]));
     }
     return effectiveSalary;
 }
