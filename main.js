@@ -1,5 +1,8 @@
 const MONTHS = [`Jan`, `Feb`, `Mar`, `Apr`, `May`, `Jun`, `Jul`, `Aug`, `Sep`, `Oct`, `Nov`, `Dec`];
 const STORAGE_KEY = 'salaryData-v1';
+const VALID_PAY_TYPES = new Set(['salary', 'hourly_full_time', 'hourly_part_time']);
+const DEFAULT_PAY_TYPE = 'salary';
+const MAX_HOURS_PER_WEEK = 168;
 
 let salaryData = [];
 let currentViewMode = 'dollar';
@@ -201,11 +204,35 @@ function bindAppEvents() {
             if (!entry) {
                 return;
             }
+
+            const payTypeInput = document.querySelector(`input[name="salaryType"][value="${entry.payType}"]`);
+            const hoursField = document.getElementById('hoursPerWeek');
+            const form = document.getElementById('salaryForm');
+
             document.getElementById('salaryId').value = entry.id;
             document.getElementById('salaryDate').value = entry.startDate;
             document.getElementById('salaryAmount').value = entry.amount;
+            if (payTypeInput) {
+                payTypeInput.checked = true;
+            }
+            if (hoursField) {
+                hoursField.value = entry.payType === 'hourly_part_time'
+                    ? String(Number(entry.hoursPerWeek || 0).toFixed(1))
+                    : '20';
+            }
             document.getElementById('salarySubmitButton').textContent = 'Update Salary';
             document.getElementById('cancelEditButton').classList.remove('hidden');
+            form.classList.add('is-editing');
+            updatePayTypeUi();
+            form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            form.animate([
+                { boxShadow: '0 0 0 rgba(37, 99, 235, 0)' },
+                { boxShadow: '0 0 0 4px rgba(37, 99, 235, 0.18)' },
+                { boxShadow: '0 0 0 0 rgba(37, 99, 235, 0)' }
+            ], {
+                duration: 1200,
+                easing: 'ease-out'
+            });
         }
     });
 
@@ -225,6 +252,12 @@ function bindAppEvents() {
             return;
         }
 
+        if (document.getElementById('salaryId').value !== id) {
+            event.preventDefault();
+            target.value = getOriginalListValue(entry, field);
+            return;
+        }
+
         if (field === 'amount') {
             entry.amount = Number(target.value);
         } else if (field === 'payType') {
@@ -233,7 +266,9 @@ function bindAppEvents() {
                 entry.hoursPerWeek = null;
             }
         } else if (field === 'hoursPerWeek') {
-            entry.hoursPerWeek = Number(target.value || 0);
+            const nextHours = Math.min(MAX_HOURS_PER_WEEK, Math.max(1, Number(target.value || 0)));
+            entry.hoursPerWeek = nextHours;
+            target.value = String(nextHours.toFixed(1));
         } else {
             entry[field] = target.value;
         }
@@ -320,6 +355,10 @@ function createId() {
 }
 
 function resetSalaryForm() {
+    const form = document.getElementById('salaryForm');
+    if (form) {
+        form.classList.remove('is-editing');
+    }
     document.getElementById('salaryForm').reset();
     document.getElementById('salaryId').value = '';
     document.querySelector('input[name="salaryType"][value="salary"]').checked = true;
@@ -425,6 +464,80 @@ function getCurrentMonthString() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function normalizeMonthString(value) {
+    if (value === null || value === undefined) {
+        return null;
+    }
+
+    const trimmedValue = String(value).trim();
+    if (!trimmedValue) {
+        return null;
+    }
+
+    const monthMatch = trimmedValue.match(/^\d{4}-\d{2}$/);
+    if (monthMatch) {
+        const [year, month] = trimmedValue.split('-');
+        return `${year}-${month}`;
+    }
+
+    const dateMatch = trimmedValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dateMatch) {
+        const [, year, month] = dateMatch;
+        return `${year}-${month}`;
+    }
+
+    const dateValue = new Date(trimmedValue);
+    if (!Number.isNaN(dateValue.getTime())) {
+        const year = dateValue.getUTCFullYear();
+        const month = String(dateValue.getUTCMonth() + 1).padStart(2, '0');
+        return `${year}-${month}`;
+    }
+
+    return null;
+}
+
+function normalizePayType(value) {
+    return VALID_PAY_TYPES.has(value) ? value : DEFAULT_PAY_TYPE;
+}
+
+function normalizeAmountValue(value) {
+    const amount = Number(value);
+    if (!Number.isFinite(amount) || amount < 0) {
+        return 0;
+    }
+    return Number(amount.toFixed(2));
+}
+
+function normalizeHoursValue(value) {
+    const hours = Number(value);
+    if (!Number.isFinite(hours) || hours <= 0) {
+        return 0;
+    }
+    return Number(Math.min(MAX_HOURS_PER_WEEK, hours).toFixed(1));
+}
+
+function normalizeSalaryEntry(entry, index) {
+    if (!entry || typeof entry !== 'object') {
+        return null;
+    }
+
+    const startDate = normalizeMonthString(entry.startDate);
+    if (!startDate) {
+        return null;
+    }
+
+    const normalizedPayType = normalizePayType(entry.payType);
+    const amount = normalizeAmountValue(entry.amount);
+
+    return {
+        id: entry.id || `salary-${Date.now()}-${index}`,
+        startDate,
+        amount,
+        payType: normalizedPayType,
+        hoursPerWeek: normalizedPayType === 'hourly_part_time' ? normalizeHoursValue(entry.hoursPerWeek) : null,
+    };
+}
+
 function applyCurrentMonthLimits() {
     const maxMonth = getCurrentMonthString();
     const monthInputs = document.querySelectorAll('input[type="month"]');
@@ -442,35 +555,54 @@ function sanitizeSalaryData(data) {
     }
 
     const maxMonth = getCurrentMonthString();
+    const normalizedEntries = data
+        .map((entry, index) => normalizeSalaryEntry(entry, index))
+        .filter(Boolean)
+        .filter(entry => entry.startDate <= maxMonth);
 
-    return sortSalaryData(data
-        .filter(entry => entry && entry.startDate)
-        .filter(entry => !entry.startDate || entry.startDate <= maxMonth)
-        .map((entry, index) => ({
-            id: entry.id || `salary-${Date.now()}-${index}`,
-            startDate: entry.startDate <= maxMonth ? entry.startDate : maxMonth,
-            amount: Number(entry.amount || 0),
-            payType: ['salary', 'hourly_full_time', 'hourly_part_time'].includes(entry.payType) ? entry.payType : 'salary',
-            hoursPerWeek: entry.payType === 'hourly_part_time' ? Number(entry.hoursPerWeek || 0) : null,
-        })));
+    return sortSalaryData(normalizedEntries);
 }
 
 function sortSalaryData(data) {
-    return [...data].sort((a, b) => new Date(`${a.startDate}-01T00:00:00`) - new Date(`${b.startDate}-01T00:00:00`));
+    return [...data].sort((a, b) => {
+        const dateA = new Date(`${a.startDate}-01T00:00:00Z`);
+        const dateB = new Date(`${b.startDate}-01T00:00:00Z`);
+        return dateA - dateB;
+    });
 }
 
 function getSelectedPayType() {
     return document.querySelector('input[name="salaryType"]:checked')?.value || 'salary';
 }
 
+function getOriginalListValue(entry, field) {
+    if (field === 'amount') {
+        return Number(entry.amount || 0).toFixed(2);
+    }
+    if (field === 'hoursPerWeek') {
+        const hours = Number(entry.hoursPerWeek || 0);
+        return Number.isFinite(hours) ? String(hours.toFixed(1)) : '0.0';
+    }
+    return entry[field] ?? '';
+}
+
 function updatePayTypeUi() {
     const selectedType = getSelectedPayType();
     const partTimeWrapper = document.getElementById('partTimeHoursWrapper');
     const amountLabel = document.getElementById('amountLabel');
+    const hoursField = document.getElementById('hoursPerWeek');
 
     const isPartTime = selectedType === 'hourly_part_time';
     partTimeWrapper.classList.toggle('hidden', !isPartTime);
     amountLabel.textContent = selectedType === 'salary' ? 'Amount' : 'Hourly rate';
+
+    if (hoursField) {
+        hoursField.max = String(MAX_HOURS_PER_WEEK);
+        hoursField.min = '1';
+        if (Number(hoursField.value) > MAX_HOURS_PER_WEEK) {
+            hoursField.value = String(MAX_HOURS_PER_WEEK);
+        }
+    }
 }
 
 function getAnnualizedAmount(entry) {

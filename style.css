@@ -172,6 +172,14 @@ button:disabled {
     grid-template-columns: minmax(180px, 1.2fr) minmax(180px, 1fr) minmax(160px, 0.8fr) auto;
     gap: 14px;
     align-items: end;
+    border-radius: 12px;
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+#salaryForm.is-editing {
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.18);
+    outline: 2px solid rgba(37, 99, 235, 0.4);
+    outline-offset: 2px;
 }
 
 #salaryForm label {
@@ -218,6 +226,11 @@ button:disabled {
     min-width: 0;
     padding: 8px 10px;
     font-size: 0.95rem;
+}
+
+.salary-row input[data-field="hoursPerWeek"],
+#hoursPerWeek {
+    max-width: 120px;
 }
 
 .salary-actions {
