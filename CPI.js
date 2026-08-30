@@ -1,5 +1,6 @@
 
 // https://www.bls.gov/cpi/data.htm
+// 2026: https://fred.stlouisfed.org/release/tables?rid=10&eid=34561&od=#
 // All urban consumers
 // Top Picks
 // U.S. city average, All items - CUUR0000SA0
@@ -116,5 +117,6 @@ const CPI = {
     2022: { Jan: 281.148, Feb: 283.716, Mar: 287.504, Apr: 289.109, May: 292.296, Jun: 296.311, Jul: 296.276, Aug: 296.171, Sep: 296.808, Oct: 298.012, Nov: 297.711, Dec: 296.797 },
     2023: { Jan: 299.170, Feb: 300.840, Mar: 301.836, Apr: 303.363, May: 304.127, Jun: 305.109, Jul: 305.691, Aug: 307.026, Sep: 307.789, Oct: 307.671, Nov: 307.051, Dec: 306.746 },
     2024: { Jan: 308.417, Feb: 310.326, Mar: 312.332, Apr: 313.548, May: 314.069, Jun: 314.175, Jul: 314.540, Aug: 314.796, Sep: 315.301, Oct: 315.664, Nov: 315.493, Dec: 315.605 },
-    2025: { Jan: 317.671, },
+    2025: { Jan: 317.671, Feb: 319.082, Mar: 319.799, Apr: 320.795, May: 321.465, Jun: 322.561, Jul: 323.048, Aug: 323.976, Sep: 324.800, Oct: 324.800, Nov: 324.122, Dec: 324.054 },
+    2026: { Jan: 325.252, Feb: 326.785, Mar: 330.213, Apr: 333.020, May: 335.123, Jun: 333.952, Jul: 333.918 }
 };
