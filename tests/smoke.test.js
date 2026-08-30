@@ -1,0 +1,103 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+
+const mainScript = fs.readFileSync('./main.js', 'utf8');
+const context = {
+  console,
+  document: {
+    addEventListener() {},
+    querySelectorAll() { return []; },
+    getElementById() { return null; },
+    querySelector() { return null; },
+  },
+  window: {
+    location: { search: '', href: 'http://localhost/' },
+    confirm() { return true; },
+    setTimeout() {},
+  },
+  localStorage: {
+    getItem() { return null; },
+    setItem() {},
+    removeItem() {},
+  },
+  Chart: function Chart() {},
+  URLSearchParams,
+  TextEncoder,
+  TextDecoder,
+  Uint8Array,
+  btoa: (value) => Buffer.from(value, 'binary').toString('base64'),
+  atob: (value) => Buffer.from(value, 'base64').toString('binary'),
+  Date,
+  Number,
+  Math,
+  Array,
+  Object,
+  String,
+  Boolean,
+  Set,
+};
+
+vm.createContext(context);
+vm.runInContext(mainScript, context);
+
+function testNormalizeHours() {
+  assert.equal(context.normalizeHoursValue(90000), 168);
+  assert.equal(context.normalizeHoursValue(20), 20);
+  assert.equal(context.normalizeHoursValue(0), 0);
+}
+
+function testSanitizeSalaryData() {
+  const sanitized = context.sanitizeSalaryData([
+    { id: 'b', startDate: '2024-06', amount: '50000', payType: 'salary' },
+    { id: 'a', startDate: '2020-02-15', amount: '70000', payType: 'hourly_part_time', hoursPerWeek: '40' },
+    { id: 'bad', startDate: 'bad-date', amount: '1000' },
+    { id: 'future', startDate: '2099-01', amount: '120000', payType: 'salary' },
+  ]);
+
+  assert.equal(sanitized.length, 2);
+  assert.equal(sanitized[0].id, 'a');
+  assert.equal(sanitized[1].id, 'b');
+  assert.equal(sanitized[0].payType, 'hourly_part_time');
+  assert.equal(sanitized[0].hoursPerWeek, 40);
+}
+
+function testShareRoundTrip() {
+  const original = [
+    { id: 'salary-1', startDate: '2024-06', amount: 12345.67, payType: 'salary' },
+    { id: 'salary-2', startDate: '2025-01', amount: 9876.54, payType: 'hourly_part_time', hoursPerWeek: 25 },
+  ];
+
+  const encoded = context.serializeData(original);
+  const decoded = context.deserializeData(encoded);
+
+  assert.equal(decoded.length, 2);
+  assert.equal(decoded[0].amount, 12345.67);
+  assert.equal(decoded[1].hoursPerWeek, 25);
+}
+
+function testAnnualizedAmount() {
+  assert.equal(context.getAnnualizedAmount({ amount: 100, payType: 'salary' }), 100);
+  assert.equal(context.getAnnualizedAmount({ amount: 20, payType: 'hourly_full_time' }), 41600);
+  assert.equal(context.getAnnualizedAmount({ amount: 20, payType: 'hourly_part_time', hoursPerWeek: 25 }), 26000);
+}
+
+function testSupportAmountNormalization() {
+  const { coerceSupportAmount } = require('../server.js');
+  assert.equal(coerceSupportAmount('5'), 5);
+  assert.equal(coerceSupportAmount('12.5'), 12.5);
+  assert.equal(coerceSupportAmount('0'), 5);
+  assert.equal(coerceSupportAmount('abc'), 5);
+}
+
+try {
+  testNormalizeHours();
+  testSanitizeSalaryData();
+  testShareRoundTrip();
+  testAnnualizedAmount();
+  testSupportAmountNormalization();
+  console.log('smoke checks passed');
+} catch (error) {
+  console.error(error);
+  process.exitCode = 1;
+}

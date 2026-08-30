@@ -40,8 +40,37 @@ input {
 
 .action-cluster {
     display: flex;
+    align-items: center;
     gap: 10px;
     flex-wrap: wrap;
+}
+
+.support-link-button {
+    background: #f8fafc;
+    color: #1e293b;
+    border: 1px solid #cbd5e1;
+    font-size: 0.82rem;
+    opacity: 0.9;
+    transition: opacity 0.2s ease;
+    white-space: nowrap;
+}
+
+.support-link-button:hover {
+    opacity: 1;
+}
+
+.support-link {
+    color: #475569;
+    text-decoration: none;
+    font-size: 0.82rem;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+    white-space: nowrap;
+}
+
+.support-link:hover {
+    opacity: 1;
+    text-decoration: underline;
 }
 
 button {
@@ -404,6 +433,31 @@ canvas {
     justify-content: flex-end;
     align-items: center;
     margin-top: 10px;
+}
+
+.support-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 18px 0 12px;
+    font-weight: 600;
+}
+
+.support-field input {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+.support-provider-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.support-provider-button {
+    flex: 1;
 }
 
 .share-status {

@@ -9,5 +9,10 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "@paypal/checkout-server-sdk": "^1.0.3",
+    "express": "^5.2.1",
+    "stripe": "^22.6.0"
+  }
 }
