@@ -72,6 +72,30 @@ button:disabled {
     background: #dc2626;
 }
 
+.site-summary {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin: 0 0 18px;
+    color: #1e3a8a;
+}
+
+.site-summary .eyebrow {
+    margin: 0 0 6px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #2563eb;
+}
+
+.site-summary p:last-child {
+    margin: 0;
+    line-height: 1.5;
+    font-size: 1rem;
+}
+
 .view-toggle {
     display: inline-flex;
     background: #e2e8f0;

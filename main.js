@@ -821,7 +821,7 @@ function displayCombinedSalaryGraph(salaries, viewMode = currentViewMode) {
             month: 'short',
             year: 'numeric'
         });
-        subtitle.textContent = `No inflation vs. ${earliestDate} dollars.`;
+        subtitle.textContent = `Your pay in ${earliestDate} dollars compared to inflation.`;
     }
 
     const firstSalaryMonth = sortedSalaries[0]?.startDate;
@@ -881,7 +881,7 @@ function displayCombinedSalaryGraph(salaries, viewMode = currentViewMode) {
         data: {
             labels: rangeLabels,
             datasets: [{
-                label: 'No inflation',
+                label: 'Actual salary',
                 data: noInflationSalary,
                 borderColor: 'rgba(75, 192, 192, 1)',
                 borderWidth: 2,
@@ -889,7 +889,7 @@ function displayCombinedSalaryGraph(salaries, viewMode = currentViewMode) {
                 pointHoverRadius: 5,
                 pointBackgroundColor: 'rgba(75, 192, 192, 1)'
             }, {
-                label: 'Inflation not reset',
+                label: `Inflation adjusted (${firstSalaryMonthLabel} dollars)`,
                 data: inflationAdjustedSalary,
                 borderColor: 'rgba(255, 99, 132, 1)',
                 borderWidth: 2,
@@ -940,8 +940,8 @@ function displayCombinedSalaryGraph(salaries, viewMode = currentViewMode) {
                     title: {
                         display: true,
                         text: viewMode === 'normalized'
-                            ? `Change vs ${firstSalaryMonthLabel} (%)`
-                            : `${firstSalaryMonthLabel} Dollars`
+                            ? `Percent change vs ${firstSalaryMonthLabel}`
+                            : 'Dollars'
                     }
                 }
             }
