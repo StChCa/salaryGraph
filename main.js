@@ -167,11 +167,12 @@ function getFixedCPIArray(startYear, startMonth, endYear, endMonth) {
 }
 
 function inflationDifference(startCPI, endCPI) {
-    if (startCPI === null || startCPI === undefined || startCPI === 0) {
+    if (startCPI === null || startCPI === undefined || startCPI === 0 ||
+        endCPI === null || endCPI === undefined || endCPI === 0) {
         return 0;
     }
 
-    return (1 - (endCPI - startCPI) / startCPI);
+    return startCPI / endCPI;
 }
 
 function inflationAdjust(value, startCPI, endCPI) {
@@ -252,7 +253,7 @@ function displayCPISalaryGraph(salaries) {
             {
                 label: 'CPI Data 2',
                 data: cpiDat2, // Update data
-                borderColor: 'rgba(75, 192, 192, 1)',
+                borderColor: 'rgb(192, 112, 75)',
                 borderWidth: 1
             }]
         },
