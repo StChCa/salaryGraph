@@ -11,27 +11,10 @@
     <script src="CPI.js" defer></script>
     <script src="main.js" defer></script>
 
-    <h1>salaryGraph</h1>
-    <h4>No Inflation.</h4>
+    <h1>Combined salary graph</h1>
+    <h4 id="salaryGraphSubtitle">No inflation vs. Nov 2018 dollars.</h4>
     <div id="cpi-salary-graph">
-        <canvas id="salaryGraph" width="50vw" height="30vh"></canvas>
-    </div>
-
-    <h1>inflationResetSalaryGraph</h1>
-    <h4>Inflation is reset on each salary entry.</h4>
-    <div id="irsg">
-        <canvas id="inflation-reset-salary-graph" width="50vw" height="30vh"></canvas>
-    </div>
-
-    <h1>noInflationReset</h1>
-    <h4>Inflation is not reset. Values are in dollars of the start of your career.</h4>
-    <div id="nrsg">
-        <canvas id="no-reset-salary-graph" width="50vw" height="30vh"></canvas>
-    </div>
-
-    <h1>CPI Over Time</h1>
-    <div id="cpi-data">
-        <canvas id="cpiGraph" width="50vw" height="30vh"></canvas>
+        <canvas id="salaryGraph"></canvas>
     </div>
 </body>
 </html>

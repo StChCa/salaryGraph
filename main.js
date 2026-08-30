@@ -2,9 +2,7 @@ const MONTHS = [`Jan`, `Feb`, `Mar`, `Apr`, `May`, `Jun`, `Jul`, `Aug`, `Sep`, `
 
 document.addEventListener('DOMContentLoaded', () => {
     // displayCPI();
-    displayCPISalaryGraph(Salaries);
-    displayInflationResetSalaryGraph(Salaries);
-    displayInflationSalaryGraph(Salaries);
+    displayCombinedSalaryGraph(Salaries);
     // displayCPIGraph();
 });
 
@@ -205,129 +203,25 @@ function getLabelsForRange(startYear, startMonth, endYear, endMonth) {
     return labels;
 }
 
-// GRAPH 1
-// Graph that displays a graph of multiple salaries.
-// No inflation adjustments.
-function displayCPISalaryGraph(salaries) {
-
-    let effectiveSalary = [];
+// Graph that combines the no-inflation and career-start-dollar salary series.
+// Both datasets are aligned to the same starting point, then diverge as CPI inflation changes.
+function displayCombinedSalaryGraph(salaries) {
+    let noInflationSalary = [];
+    let inflationAdjustedSalary = [];
     let rangeLabels = [];
-    
-    salaries.forEach(salary => {
-        const startDate = salary.startDate;
-        const startYear = startDate.split('-')[0];
-        const startMonth = MONTHS[Number(startDate.split('-')[1]) - 1];
-        const endDate = salary.endDate;
-        const endYear = endDate.split('-')[0];
-        const endMonth = MONTHS[Number(endDate.split('-')[1]) - 1];
-        const startSalary = salary.salary;
-
-        const cpiForRange = getFixedCPIArray(startYear, startMonth, endYear, endMonth);
-        effectiveSalary = effectiveSalary.concat(getEffectiveSalaryValues(startSalary, cpiForRange));
-        rangeLabels = rangeLabels.concat(getLabelsForRange(startYear, startMonth, endYear, endMonth));
-
-    });
-    
-    const ctx = document.getElementById('salaryGraph').getContext('2d');
-    
-    // Define the labels and CPI data
-    const labels = rangeLabels;
-    const cpiData = effectiveSalary;
-    let cpiDat2 = [];
-    for (let i = 0; i < cpiData.length; i++) {
-        cpiDat2.push(cpiData[i] +1000);
-    }
-
-    console.log(`cpiDat2 ${cpiDat2}`);
-
-    graphObject = {
-        type: 'line',
-        data: {
-            labels: labels, // Update labels
-            datasets: [{
-                label: 'CPI Data',
-                data: cpiData, // Update data
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
-            },
-            {
-                label: 'CPI Data 2',
-                data: cpiDat2, // Update data
-                borderColor: 'rgb(192, 112, 75)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    }
-
-    new Chart(ctx, graphObject);
-}
-
-// GRAPH 2
-// Graph that displays a graph of multiple salaries.
-// Each Salary is represented in dollars at the start of THAT salary.
-function displayInflationResetSalaryGraph(salaries) {
-
-    let effectiveSalary = [];
-    let rangeLabels = [];
-
-    salaries.forEach(salary => {
-        const startDate = salary.startDate;
-        const startYear = startDate.split('-')[0];
-        const startMonth = MONTHS[Number(startDate.split('-')[1]) - 1];
-        const endDate = salary.endDate;
-        const endYear = endDate.split('-')[0];
-        const endMonth = MONTHS[Number(endDate.split('-')[1]) - 1];
-        const startSalary = salary.salary;
-
-        const cpiForRange = getCPIForRange(startYear, startMonth, endYear, endMonth);
-        effectiveSalary = effectiveSalary.concat(getEffectiveSalaryValues(startSalary, cpiForRange));
-        rangeLabels = rangeLabels.concat(getLabelsForRange(startYear, startMonth, endYear, endMonth));
-
-    });
-    
-    const ctx = document.getElementById('inflation-reset-salary-graph').getContext('2d');
-    
-    // Define the labels and CPI data
-    const labels = rangeLabels;
-    const cpiData = effectiveSalary;
-
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels, // Update labels
-            datasets: [{
-                label: 'CPI Data',
-                data: cpiData, // Update data
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-}
-
-// GRAPH 3
-// Graph that displays a graph of multiple salaries.
-// All values are in Salary1 Day 1 dollars.
-function displayInflationSalaryGraph(salaries) {
-
-    let effectiveSalary = [];
-    let rangeLabels = [];
-
     let startingCPI;
+
+    const subtitle = document.getElementById('salaryGraphSubtitle');
+    if (subtitle && salaries.length > 0) {
+        const earliestSalary = salaries
+            .map(salary => new Date(salary.startDate))
+            .reduce((earliest, current) => current < earliest ? current : earliest);
+        const earliestDate = earliestSalary.toLocaleDateString('en-US', {
+            month: 'short',
+            year: 'numeric'
+        });
+        subtitle.textContent = `No inflation vs. ${earliestDate} dollars.`;
+    }
 
     salaries.forEach(salary => {
         const startDate = salary.startDate;
@@ -342,33 +236,59 @@ function displayInflationSalaryGraph(salaries) {
             startingCPI = cpiForYearMonth(startYear, startMonth);
         }
 
-        const cpiForRange = getCPIForRange(startYear, startMonth, endYear, endMonth);
-        effectiveSalary = effectiveSalary.concat(getEffectiveSalaryValues(inflationAdjust(startSalary, startingCPI, cpiForYearMonth(startYear, startMonth)), cpiForRange));
-        rangeLabels = rangeLabels.concat(getLabelsForRange(startYear, startMonth, endYear, endMonth));
+        const noInflationRange = getFixedCPIArray(startYear, startMonth, endYear, endMonth);
+        noInflationSalary = noInflationSalary.concat(getEffectiveSalaryValues(startSalary, noInflationRange));
 
+        const inflationRange = getCPIForRange(startYear, startMonth, endYear, endMonth);
+        inflationAdjustedSalary = inflationAdjustedSalary.concat(
+            getEffectiveSalaryValues(inflationAdjust(startSalary, startingCPI, cpiForYearMonth(startYear, startMonth)), inflationRange)
+        );
+
+        rangeLabels = rangeLabels.concat(getLabelsForRange(startYear, startMonth, endYear, endMonth));
     });
-    
-    const ctx = document.getElementById('no-reset-salary-graph').getContext('2d');
-    
-    // Define the labels and CPI data
-    const labels = rangeLabels;
-    const cpiData = effectiveSalary;
+
+    const ctx = document.getElementById('salaryGraph').getContext('2d');
 
     new Chart(ctx, {
         type: 'line',
         data: {
-            labels: labels, // Update labels
+            labels: rangeLabels,
             datasets: [{
-                label: 'CPI Data',
-                data: cpiData, // Update data
+                label: 'No inflation',
+                data: noInflationSalary,
                 borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
+                borderWidth: 2,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                pointBackgroundColor: 'rgba(75, 192, 192, 1)'
+            }, {
+                label: 'Inflation not reset',
+                data: inflationAdjustedSalary,
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 2,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                pointBackgroundColor: 'rgba(255, 99, 132, 1)'
             }]
         },
         options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            interaction: {
+                mode: 'nearest',
+                intersect: false
+            },
+            spanGaps: true,
             scales: {
+                x: {
+                    display: true,
+                    ticks: {
+                        maxTicksLimit: 12
+                    }
+                },
                 y: {
-                    beginAtZero: true
+                    beginAtZero: false
                 }
             }
         }
