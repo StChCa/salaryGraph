@@ -149,6 +149,14 @@ function bindAppEvents() {
 
     document.getElementById('cancelEditButton').addEventListener('click', resetSalaryForm);
 
+    document.getElementById('toggleSalaryHistoryButton').addEventListener('click', () => {
+        const panel = document.getElementById('salaryHistoryPanel');
+        const isCollapsed = panel.classList.toggle('is-collapsed');
+        const button = document.getElementById('toggleSalaryHistoryButton');
+        button.textContent = isCollapsed ? 'Show salary history' : 'Hide salary history';
+        button.setAttribute('aria-expanded', String(!isCollapsed));
+    });
+
     document.getElementById('salaryList').addEventListener('click', (event) => {
         const button = event.target.closest('button[data-action]');
         if (!button) {
@@ -417,8 +425,10 @@ function renderSalaryList() {
             </select>
             <input type="number" min="0" step="0.01" data-id="${entry.id}" data-field="amount" value="${Number(entry.amount).toFixed(2)}" aria-label="Salary amount">
             ${entry.payType === 'hourly_part_time' ? `<input type="number" min="1" step="0.5" data-id="${entry.id}" data-field="hoursPerWeek" value="${Number(entry.hoursPerWeek || 0).toFixed(1)}" aria-label="Hours per week">` : '<span class="muted-label">-</span>'}
-            <button type="button" data-action="edit" data-id="${entry.id}">Edit</button>
-            <button type="button" class="delete-button" data-action="delete" data-id="${entry.id}">Delete</button>
+            <div class="salary-actions">
+                <button type="button" data-action="edit" data-id="${entry.id}">Edit</button>
+                <button type="button" class="delete-button" data-action="delete" data-id="${entry.id}">Delete</button>
+            </div>
         </div>
     `).join('');
 }

@@ -180,7 +180,7 @@ button:disabled {
 
 .salary-row {
     display: grid;
-    grid-template-columns: minmax(170px, 1fr) minmax(170px, 1fr) auto auto;
+    grid-template-columns: minmax(150px, 1fr) minmax(170px, 1fr) minmax(120px, 0.8fr) minmax(80px, 0.5fr) auto auto;
     gap: 10px;
     align-items: center;
     padding: 10px 12px;
@@ -189,8 +189,53 @@ button:disabled {
     border-radius: 10px;
 }
 
+.salary-row input,
+.salary-row select {
+    width: 100%;
+    min-width: 0;
+    padding: 8px 10px;
+    font-size: 0.95rem;
+}
+
+.salary-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.salary-actions button {
+    padding: 8px 10px;
+    font-size: 0.85rem;
+}
+
 .delete-button {
     background: #ef4444;
+}
+
+.muted-label {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 38px;
+    color: #6b7280;
+    font-weight: 600;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.panel-header h2 {
+    margin: 0;
+}
+
+#salaryHistoryPanel.is-collapsed .salary-list {
+    display: none;
 }
 
 .empty-state {
@@ -297,15 +342,30 @@ canvas {
     font-weight: 600;
 }
 
+@media (max-width: 820px) {
+    .salary-row {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .salary-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+    }
+}
+
 @media (max-width: 720px) {
     .header-block {
         flex-direction: column;
         align-items: flex-start;
     }
 
-    #salaryForm,
-    .salary-row {
+    #salaryForm, .salary-row {
         grid-template-columns: 1fr;
+    }
+
+    .panel-header {
+        align-items: flex-start;
+        flex-direction: column;
     }
 
     .form-actions,
