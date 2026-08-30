@@ -1,12 +1,11 @@
 const MONTHS = [`Jan`, `Feb`, `Mar`, `Apr`, `May`, `Jun`, `Jul`, `Aug`, `Sep`, `Oct`, `Nov`, `Dec`];
+const STORAGE_KEY = 'salaryData-v1';
 
-document.addEventListener('DOMContentLoaded', () => {
-    // displayCPI();
-    displayCombinedSalaryGraph(Salaries);
-    // displayCPIGraph();
-});
+let salaryData = [];
+let currentViewMode = 'dollar';
+let currentChart = null;
 
-
+/*
 const Salaries = [
     {
         startDate: '2018-11-01',
@@ -74,6 +73,591 @@ const Salaries = [
         salary: 124800.39,
     },
 ];
+*/
+
+const starterSalaryData = [
+    { id: 'salary-1', startDate: '2018-11-01', amount: 35360 },
+    { id: 'salary-2', startDate: '2020-01-01', amount: 42536 },
+    { id: 'salary-3', startDate: '2020-09-01', amount: 52536 },
+    { id: 'salary-4', startDate: '2021-01-01', amount: 54217.15 },
+    { id: 'salary-5', startDate: '2021-07-01', amount: 80000 },
+    { id: 'salary-6', startDate: '2022-01-01', amount: 83280 },
+    { id: 'salary-7', startDate: '2022-07-01', amount: 93773.28 },
+    { id: 'salary-8', startDate: '2023-01-01', amount: 98461.94 },
+    { id: 'salary-9', startDate: '2024-01-01', amount: 102400.48 },
+    { id: 'salary-10', startDate: '2024-07-01', amount: 105472.49 },
+    { id: 'salary-11', startDate: '2024-12-01', amount: 109691.39 },
+    { id: 'salary-12', startDate: '2025-12-01', amount: 113000.39 },
+    { id: 'salary-13', startDate: '2026-06-01', amount: 124800.39 },
+];
+
+document.addEventListener('DOMContentLoaded', () => {
+    bindAppEvents();
+
+    const urlData = getUrlPayload();
+    if (urlData && urlData.length > 0) {
+        salaryData = urlData;
+        showSavePrompt();
+    } else {
+        salaryData = loadFromLocalStorage();
+        if (!salaryData.length) {
+            salaryData = [];
+        }
+    }
+
+    applyCurrentMonthLimits();
+    updatePayTypeUi();
+    renderAll();
+});
+
+function bindAppEvents() {
+    document.querySelectorAll('input[name="salaryType"]').forEach(radio => {
+        radio.addEventListener('change', updatePayTypeUi);
+    });
+
+    document.getElementById('salaryForm').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const idField = document.getElementById('salaryId');
+        const dateField = document.getElementById('salaryDate');
+        const amountField = document.getElementById('salaryAmount');
+        const salaryType = getSelectedPayType();
+        const hoursField = document.getElementById('hoursPerWeek');
+
+        if (!dateField.value || !amountField.value) {
+            return;
+        }
+
+        const payload = {
+            id: idField.value || createId(),
+            startDate: dateField.value,
+            amount: Number(amountField.value),
+            payType: salaryType,
+            hoursPerWeek: salaryType === 'hourly_part_time' ? Number(hoursField.value || 0) : null,
+        };
+
+        if (idField.value) {
+            salaryData = salaryData.map(entry => entry.id === payload.id ? payload : entry);
+        } else {
+            salaryData.push(payload);
+        }
+
+        salaryData = sortSalaryData(salaryData);
+        saveToLocalStorage(salaryData);
+        resetSalaryForm();
+        renderAll();
+    });
+
+    document.getElementById('cancelEditButton').addEventListener('click', resetSalaryForm);
+
+    document.getElementById('salaryList').addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-action]');
+        if (!button) {
+            return;
+        }
+
+        const { id, action } = button.dataset;
+        if (action === 'delete') {
+            salaryData = salaryData.filter(entry => entry.id !== id);
+            saveToLocalStorage(salaryData);
+            if (document.getElementById('salaryId').value === id) {
+                resetSalaryForm();
+            }
+            renderAll();
+        }
+
+        if (action === 'edit') {
+            const entry = salaryData.find(item => item.id === id);
+            if (!entry) {
+                return;
+            }
+            document.getElementById('salaryId').value = entry.id;
+            document.getElementById('salaryDate').value = entry.startDate;
+            document.getElementById('salaryAmount').value = entry.amount;
+            document.getElementById('salarySubmitButton').textContent = 'Update Salary';
+            document.getElementById('cancelEditButton').classList.remove('hidden');
+        }
+    });
+
+    document.getElementById('salaryList').addEventListener('input', (event) => {
+        const target = event.target;
+        const { id, field } = target.dataset;
+        if (!id || !field) {
+            return;
+        }
+
+        const entry = salaryData.find(item => item.id === id);
+        if (!entry) {
+            return;
+        }
+
+        if (field === 'amount') {
+            entry.amount = Number(target.value);
+        } else if (field === 'payType') {
+            entry.payType = target.value;
+            if (entry.payType !== 'hourly_part_time') {
+                entry.hoursPerWeek = null;
+            }
+        } else if (field === 'hoursPerWeek') {
+            entry.hoursPerWeek = Number(target.value || 0);
+        } else {
+            entry[field] = target.value;
+        }
+
+        salaryData = sortSalaryData(salaryData);
+        saveToLocalStorage(salaryData);
+        renderAll();
+    });
+
+    document.getElementById('clearDataButton').addEventListener('click', () => {
+        localStorage.removeItem(STORAGE_KEY);
+        salaryData = [];
+        resetSalaryForm();
+        renderAll();
+    });
+
+    document.querySelectorAll('.view-toggle button').forEach(button => {
+        button.addEventListener('click', () => {
+            currentViewMode = button.dataset.view;
+            renderViewButtons();
+            renderChart();
+        });
+    });
+
+    document.getElementById('saveFromUrlButton').addEventListener('click', () => {
+        saveToLocalStorage(salaryData);
+        hideSavePrompt();
+    });
+
+    document.getElementById('dismissSavePromptButton').addEventListener('click', hideSavePrompt);
+
+    document.getElementById('shareButton').addEventListener('click', () => {
+        document.getElementById('shareModal').classList.remove('hidden');
+        updateShareUi();
+    });
+
+    document.getElementById('closeShareModal').addEventListener('click', () => {
+        document.getElementById('shareModal').classList.add('hidden');
+    });
+
+    document.querySelectorAll('input[name="shareMode"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            updateShareUi();
+        });
+    });
+
+    document.getElementById('exactShareConfirm').addEventListener('change', () => {
+        updateShareUi();
+    });
+
+    document.getElementById('copyShareLinkButton').addEventListener('click', () => {
+        copyShareLink(false);
+    });
+
+    document.getElementById('copyExactLinkButton').addEventListener('click', () => {
+        copyShareLink(true);
+    });
+}
+
+function createId() {
+    return `salary-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
+function resetSalaryForm() {
+    document.getElementById('salaryForm').reset();
+    document.getElementById('salaryId').value = '';
+    document.querySelector('input[name="salaryType"][value="salary"]').checked = true;
+    document.getElementById('salarySubmitButton').textContent = 'Add Salary';
+    document.getElementById('cancelEditButton').classList.add('hidden');
+    applyCurrentMonthLimits();
+    updatePayTypeUi();
+}
+
+function renderAll() {
+    renderSalaryList();
+    renderViewButtons();
+    if (!salaryData.length) {
+        const ctx = document.getElementById('salaryGraph');
+        if (ctx && currentChart) {
+            currentChart.destroy();
+            currentChart = null;
+        }
+        if (ctx) {
+            const existingCanvas = ctx.getContext('2d');
+            existingCanvas.clearRect(0, 0, ctx.width, ctx.height);
+        }
+        const subtitle = document.getElementById('salaryGraphSubtitle');
+        if (subtitle) {
+            subtitle.textContent = 'Add your first salary to start the chart.';
+        }
+        return;
+    }
+    renderChart();
+}
+
+function renderViewButtons() {
+    document.querySelectorAll('.view-toggle button').forEach(button => {
+        const isSelected = button.dataset.view === currentViewMode;
+        button.classList.toggle('is-active', isSelected);
+    });
+}
+
+function saveToLocalStorage(data) {
+    const normalizedData = sanitizeSalaryData(data);
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedData));
+    } catch (error) {
+        console.warn('Unable to save to localStorage.', error);
+    }
+    return normalizedData;
+}
+
+function loadFromLocalStorage() {
+    try {
+        const rawValue = localStorage.getItem(STORAGE_KEY);
+        if (!rawValue) {
+            return [];
+        }
+
+        const parsed = JSON.parse(rawValue);
+        return sanitizeSalaryData(parsed);
+    } catch (error) {
+        console.warn('Unable to load from localStorage.', error);
+        return [];
+    }
+}
+
+function getCurrentMonthString() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function applyCurrentMonthLimits() {
+    const maxMonth = getCurrentMonthString();
+    const monthInputs = document.querySelectorAll('input[type="month"]');
+    monthInputs.forEach(input => {
+        input.max = maxMonth;
+        if (input.value && input.value > maxMonth) {
+            input.value = maxMonth;
+        }
+    });
+}
+
+function sanitizeSalaryData(data) {
+    if (!Array.isArray(data)) {
+        return [];
+    }
+
+    const maxMonth = getCurrentMonthString();
+
+    return sortSalaryData(data
+        .filter(entry => entry && entry.startDate)
+        .filter(entry => !entry.startDate || entry.startDate <= maxMonth)
+        .map((entry, index) => ({
+            id: entry.id || `salary-${Date.now()}-${index}`,
+            startDate: entry.startDate <= maxMonth ? entry.startDate : maxMonth,
+            amount: Number(entry.amount || 0),
+            payType: ['salary', 'hourly_full_time', 'hourly_part_time'].includes(entry.payType) ? entry.payType : 'salary',
+            hoursPerWeek: entry.payType === 'hourly_part_time' ? Number(entry.hoursPerWeek || 0) : null,
+        })));
+}
+
+function sortSalaryData(data) {
+    return [...data].sort((a, b) => new Date(`${a.startDate}-01T00:00:00`) - new Date(`${b.startDate}-01T00:00:00`));
+}
+
+function getSelectedPayType() {
+    return document.querySelector('input[name="salaryType"]:checked')?.value || 'salary';
+}
+
+function updatePayTypeUi() {
+    const selectedType = getSelectedPayType();
+    const partTimeWrapper = document.getElementById('partTimeHoursWrapper');
+    const amountLabel = document.getElementById('amountLabel');
+
+    const isPartTime = selectedType === 'hourly_part_time';
+    partTimeWrapper.classList.toggle('hidden', !isPartTime);
+    amountLabel.textContent = selectedType === 'salary' ? 'Amount' : 'Hourly rate';
+}
+
+function getAnnualizedAmount(entry) {
+    const amount = Number(entry.amount || 0);
+    if (!entry || !Number.isFinite(amount)) {
+        return 0;
+    }
+
+    switch (entry.payType) {
+        case 'hourly_full_time':
+            return amount * 40 * 52;
+        case 'hourly_part_time':
+            return amount * ((Number(entry.hoursPerWeek) || 0) * 52);
+        default:
+            return amount;
+    }
+}
+
+function renderSalaryList() {
+    const list = document.getElementById('salaryList');
+    if (!list) {
+        return;
+    }
+
+    if (!salaryData.length) {
+        list.innerHTML = '<p class="empty-state">No salary entries yet. Add your first salary to begin.</p>';
+        return;
+    }
+
+    const maxMonth = getCurrentMonthString();
+    list.innerHTML = salaryData.map(entry => `
+        <div class="salary-row">
+            <input type="month" data-id="${entry.id}" data-field="startDate" value="${entry.startDate}" max="${maxMonth}" aria-label="Salary start month">
+            <select data-id="${entry.id}" data-field="payType" aria-label="Salary type">
+                <option value="salary" ${entry.payType === 'salary' ? 'selected' : ''}>Salary</option>
+                <option value="hourly_full_time" ${entry.payType === 'hourly_full_time' ? 'selected' : ''}>Hourly (Full Time)</option>
+                <option value="hourly_part_time" ${entry.payType === 'hourly_part_time' ? 'selected' : ''}>Hourly (Part Time)</option>
+            </select>
+            <input type="number" min="0" step="0.01" data-id="${entry.id}" data-field="amount" value="${Number(entry.amount).toFixed(2)}" aria-label="Salary amount">
+            ${entry.payType === 'hourly_part_time' ? `<input type="number" min="1" step="0.5" data-id="${entry.id}" data-field="hoursPerWeek" value="${Number(entry.hoursPerWeek || 0).toFixed(1)}" aria-label="Hours per week">` : '<span class="muted-label">-</span>'}
+            <button type="button" data-action="edit" data-id="${entry.id}">Edit</button>
+            <button type="button" class="delete-button" data-action="delete" data-id="${entry.id}">Delete</button>
+        </div>
+    `).join('');
+}
+
+function getUrlPayload() {
+    const hashPayload = window.location.hash ? window.location.hash.replace(/^#/, '') : '';
+    if (hashPayload) {
+        const decoded = deserializeData(hashPayload);
+        if (decoded.length) {
+            return decoded;
+        }
+    }
+
+    const searchParam = new URLSearchParams(window.location.search).get('salaryData');
+    if (searchParam) {
+        const decoded = deserializeData(searchParam);
+        if (decoded.length) {
+            return decoded;
+        }
+    }
+
+    return null;
+}
+
+function serializeData(data, anonymize = false) {
+    const normalizedData = sanitizeSalaryData(data);
+    if (!normalizedData.length) {
+        return btoa(JSON.stringify([]));
+    }
+
+    const payload = anonymize ? normalizedData.map((entry, index) => {
+        const baseValue = Number(normalizedData[0].amount) || 100;
+        return {
+            ...entry,
+            id: entry.id || `salary-${index + 1}`,
+            amount: Number(((Number(entry.amount) / baseValue) * 100).toFixed(4)),
+        };
+    }) : normalizedData;
+
+    return btoa(JSON.stringify(payload));
+}
+
+function deserializeData(urlHash) {
+    try {
+        const decoded = atob(urlHash.replace(/^#/, ''));
+        const parsed = JSON.parse(decoded);
+        if (!Array.isArray(parsed)) {
+            return [];
+        }
+        return sanitizeSalaryData(parsed);
+    } catch (error) {
+        console.warn('Unable to deserialize URL payload.', error);
+        return [];
+    }
+}
+
+function showSavePrompt() {
+    const prompt = document.getElementById('savePrompt');
+    if (prompt) {
+        prompt.classList.remove('hidden');
+    }
+}
+
+function hideSavePrompt() {
+    const prompt = document.getElementById('savePrompt');
+    if (prompt) {
+        prompt.classList.add('hidden');
+    }
+}
+
+function updateShareUi() {
+    const selectedMode = document.querySelector('input[name="shareMode"]:checked').value;
+    const exactWarning = document.getElementById('exactShareWarning');
+    const exactCheckbox = document.getElementById('exactShareConfirm');
+    const exactButton = document.getElementById('copyExactLinkButton');
+
+    const isExact = selectedMode === 'exact';
+    exactWarning.classList.toggle('hidden', !isExact);
+    exactCheckbox.closest('label').classList.toggle('hidden', !isExact);
+    exactButton.disabled = !isExact || !exactCheckbox.checked;
+
+    document.getElementById('copyShareLinkButton').classList.toggle('hidden', isExact);
+    document.getElementById('copyExactLinkButton').classList.toggle('hidden', !isExact);
+}
+
+async function copyShareLink(exactMode) {
+    const payload = serializeData(salaryData, exactMode ? false : true);
+    const baseUrl = `${window.location.origin}${window.location.pathname}`;
+    const shareUrl = `${baseUrl}#${payload}`;
+
+    try {
+        await navigator.clipboard.writeText(shareUrl);
+        const statusText = exactMode ? 'Exact link copied to clipboard.' : 'Anonymized share link copied to clipboard.';
+        showShareStatus(statusText);
+    } catch (error) {
+        console.warn('Clipboard copy failed.', error);
+        showShareStatus('Clipboard access was blocked. Please copy the URL manually.');
+    }
+}
+
+function showShareStatus(message) {
+    const status = document.getElementById('shareStatus');
+    status.textContent = message;
+    status.classList.remove('hidden');
+    window.setTimeout(() => {
+        status.classList.add('hidden');
+    }, 2200);
+}
+
+function displayCombinedSalaryGraph(salaries, viewMode = currentViewMode) {
+    if (!salaries || salaries.length === 0) {
+        return;
+    }
+
+    const sortedSalaries = sortSalaryData(salaries);
+    let noInflationSalary = [];
+    let inflationAdjustedSalary = [];
+    let rangeLabels = [];
+    let startingCPI;
+    const firstSalaryAmount = getAnnualizedAmount(sortedSalaries[0]) || 1;
+
+    const subtitle = document.getElementById('salaryGraphSubtitle');
+    if (subtitle) {
+        const earliestSalary = sortedSalaries
+            .map(salary => new Date(salary.startDate))
+            .reduce((earliest, current) => current < earliest ? current : earliest);
+        const earliestDate = earliestSalary.toLocaleDateString('en-US', {
+            month: 'short',
+            year: 'numeric'
+        });
+        subtitle.textContent = `No inflation vs. ${earliestDate} dollars.`;
+    }
+
+    const currentMonth = getCurrentMonthString();
+    const currentMonthParts = currentMonth.split('-');
+    const currentYear = Number(currentMonthParts[0]);
+    const currentMonthIndex = Number(currentMonthParts[1]) - 1;
+
+    sortedSalaries.forEach((salary, index) => {
+        const startDate = salary.startDate;
+        const startYear = startDate.split('-')[0];
+        const startMonth = MONTHS[Number(startDate.split('-')[1]) - 1];
+        const endDate = sortedSalaries[index + 1] ? sortedSalaries[index + 1].startDate : currentMonth;
+        const endYear = endDate.split('-')[0];
+        const endMonth = MONTHS[Number(endDate.split('-')[1]) - 1];
+        const startSalary = getAnnualizedAmount(salary);
+
+        if (startingCPI === undefined) {
+            startingCPI = cpiForYearMonth(startYear, startMonth);
+        }
+
+        const noInflationRange = getFixedCPIArray(startYear, startMonth, endYear, endMonth);
+        const rawNoInflationValues = getEffectiveSalaryValues(startSalary, noInflationRange);
+        noInflationSalary = noInflationSalary.concat(
+            viewMode === 'normalized'
+                ? rawNoInflationValues.map(value => (value / firstSalaryAmount) * 100)
+                : rawNoInflationValues
+        );
+
+        const inflationRange = getCPIForRange(startYear, startMonth, endYear, endMonth);
+        const adjustedBase = inflationAdjust(startSalary, startingCPI, cpiForYearMonth(startYear, startMonth));
+        const rawInflationValues = getEffectiveSalaryValues(adjustedBase, inflationRange);
+        inflationAdjustedSalary = inflationAdjustedSalary.concat(
+            viewMode === 'normalized'
+                ? rawInflationValues.map(value => (value / firstSalaryAmount) * 100)
+                : rawInflationValues
+        );
+
+        rangeLabels = rangeLabels.concat(getLabelsForRange(startYear, startMonth, endYear, endMonth));
+    });
+
+    const ctx = document.getElementById('salaryGraph').getContext('2d');
+
+    if (currentChart) {
+        currentChart.destroy();
+    }
+
+    currentChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: rangeLabels,
+            datasets: [{
+                label: 'No inflation',
+                data: noInflationSalary,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 2,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                pointBackgroundColor: 'rgba(75, 192, 192, 1)'
+            }, {
+                label: 'Inflation not reset',
+                data: inflationAdjustedSalary,
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 2,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                pointBackgroundColor: 'rgba(255, 99, 132, 1)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            interaction: {
+                mode: 'nearest',
+                intersect: false
+            },
+            spanGaps: true,
+            scales: {
+                x: {
+                    display: true,
+                    ticks: {
+                        maxTicksLimit: 12
+                    }
+                },
+                y: {
+                    beginAtZero: false,
+                    title: {
+                        display: true,
+                        text: viewMode === 'normalized' ? 'Index (base = 100)' : 'Dollars'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderChart() {
+    displayCombinedSalaryGraph(salaryData, currentViewMode);
+}
+
+function addMonthsToDateString(dateString, months) {
+    const safeDateString = `${dateString}-01`;
+    const date = new Date(`${safeDateString}T00:00:00Z`);
+    const month = date.getUTCMonth();
+    const year = date.getUTCFullYear();
+    const target = new Date(Date.UTC(year, month + months, 1));
+    return `${target.getUTCFullYear()}-${String(target.getUTCMonth() + 1).padStart(2, '0')}`;
+}
 
 function displayCPI() {
     const cpiDataDiv = document.getElementById('cpi-data');
@@ -201,98 +785,6 @@ function getLabelsForRange(startYear, startMonth, endYear, endMonth) {
         }
     }
     return labels;
-}
-
-// Graph that combines the no-inflation and career-start-dollar salary series.
-// Both datasets are aligned to the same starting point, then diverge as CPI inflation changes.
-function displayCombinedSalaryGraph(salaries) {
-    let noInflationSalary = [];
-    let inflationAdjustedSalary = [];
-    let rangeLabels = [];
-    let startingCPI;
-
-    const subtitle = document.getElementById('salaryGraphSubtitle');
-    if (subtitle && salaries.length > 0) {
-        const earliestSalary = salaries
-            .map(salary => new Date(salary.startDate))
-            .reduce((earliest, current) => current < earliest ? current : earliest);
-        const earliestDate = earliestSalary.toLocaleDateString('en-US', {
-            month: 'short',
-            year: 'numeric'
-        });
-        subtitle.textContent = `No inflation vs. ${earliestDate} dollars.`;
-    }
-
-    salaries.forEach(salary => {
-        const startDate = salary.startDate;
-        const startYear = startDate.split('-')[0];
-        const startMonth = MONTHS[Number(startDate.split('-')[1]) - 1];
-        const endDate = salary.endDate;
-        const endYear = endDate.split('-')[0];
-        const endMonth = MONTHS[Number(endDate.split('-')[1]) - 1];
-        const startSalary = salary.salary;
-
-        if (startingCPI === undefined) {
-            startingCPI = cpiForYearMonth(startYear, startMonth);
-        }
-
-        const noInflationRange = getFixedCPIArray(startYear, startMonth, endYear, endMonth);
-        noInflationSalary = noInflationSalary.concat(getEffectiveSalaryValues(startSalary, noInflationRange));
-
-        const inflationRange = getCPIForRange(startYear, startMonth, endYear, endMonth);
-        inflationAdjustedSalary = inflationAdjustedSalary.concat(
-            getEffectiveSalaryValues(inflationAdjust(startSalary, startingCPI, cpiForYearMonth(startYear, startMonth)), inflationRange)
-        );
-
-        rangeLabels = rangeLabels.concat(getLabelsForRange(startYear, startMonth, endYear, endMonth));
-    });
-
-    const ctx = document.getElementById('salaryGraph').getContext('2d');
-
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: rangeLabels,
-            datasets: [{
-                label: 'No inflation',
-                data: noInflationSalary,
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 2,
-                pointRadius: 3,
-                pointHoverRadius: 5,
-                pointBackgroundColor: 'rgba(75, 192, 192, 1)'
-            }, {
-                label: 'Inflation not reset',
-                data: inflationAdjustedSalary,
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 2,
-                pointRadius: 3,
-                pointHoverRadius: 5,
-                pointBackgroundColor: 'rgba(255, 99, 132, 1)'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            interaction: {
-                mode: 'nearest',
-                intersect: false
-            },
-            spanGaps: true,
-            scales: {
-                x: {
-                    display: true,
-                    ticks: {
-                        maxTicksLimit: 12
-                    }
-                },
-                y: {
-                    beginAtZero: false
-                }
-            }
-        }
-    });
 }
 
 function getAllCPI() {

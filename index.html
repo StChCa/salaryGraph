@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple JS Project</title>
+    <title>Salary History Graph</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -11,10 +11,116 @@
     <script src="CPI.js" defer></script>
     <script src="main.js" defer></script>
 
-    <h1>Combined salary graph</h1>
-    <h4 id="salaryGraphSubtitle">No inflation vs. Nov 2018 dollars.</h4>
-    <div id="cpi-salary-graph">
-        <canvas id="salaryGraph"></canvas>
+    <main class="page-shell">
+        <header class="header-block">
+            <div>
+                <h1>Combined salary graph</h1>
+                <h4 id="salaryGraphSubtitle">No inflation vs. Nov 2018 dollars.</h4>
+            </div>
+            <div class="action-cluster">
+                <button id="shareButton" type="button">Share</button>
+                <button id="clearDataButton" class="danger-button" type="button">Clear My Data</button>
+            </div>
+        </header>
+
+        <div class="view-toggle" aria-label="Chart view toggle">
+            <button type="button" class="is-active" data-view="dollar">Dollar View</button>
+            <button type="button" data-view="normalized">Percentage / Normalized View</button>
+        </div>
+
+        <div id="savePrompt" class="save-prompt hidden" role="alert">
+            <span>Save this salary history to this browser?</span>
+            <div>
+                <button id="saveFromUrlButton" type="button">Yes</button>
+                <button id="dismissSavePromptButton" type="button" class="secondary-button">No</button>
+            </div>
+        </div>
+
+        <section class="panel">
+            <form id="salaryForm">
+                <input type="hidden" id="salaryId" value="">
+
+                <div class="pay-type-group" aria-label="Pay type">
+                    <label class="pay-type-option">
+                        <input type="radio" name="salaryType" value="salary" checked>
+                        <span>Salary</span>
+                    </label>
+                    <label class="pay-type-option">
+                        <input type="radio" name="salaryType" value="hourly_full_time">
+                        <span>Hourly (Full Time)</span>
+                    </label>
+                    <label class="pay-type-option">
+                        <input type="radio" name="salaryType" value="hourly_part_time">
+                        <span>Hourly (Part Time)</span>
+                    </label>
+                </div>
+
+                <label>
+                    <span>Salary start month</span>
+                    <input id="salaryDate" type="month" required>
+                </label>
+
+                <label>
+                    <span id="amountLabel">Amount</span>
+                    <input id="salaryAmount" type="number" min="0" step="0.01" required>
+                </label>
+
+                <label id="partTimeHoursWrapper" class="hidden">
+                    <span>Hours per week</span>
+                    <input id="hoursPerWeek" type="number" min="1" step="0.5" value="20">
+                </label>
+
+                <div class="form-actions">
+                    <button id="salarySubmitButton" type="submit">Add Salary</button>
+                    <button id="cancelEditButton" type="button" class="secondary-button hidden">Cancel Edit</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel">
+            <h2>Salary history</h2>
+            <div id="salaryList" class="salary-list"></div>
+        </section>
+
+        <div id="cpi-salary-graph">
+            <canvas id="salaryGraph"></canvas>
+        </div>
+    </main>
+
+    <div id="shareModal" class="modal hidden" aria-modal="true" role="dialog">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2>Share salary history</h2>
+                <button id="closeShareModal" type="button" aria-label="Close share dialog">×</button>
+            </div>
+
+            <div class="share-mode-list">
+                <label class="share-mode-option">
+                    <input type="radio" name="shareMode" value="anonymized" checked>
+                    <span>Anonymized Share Link (Default)</span>
+                </label>
+                <label class="share-mode-option">
+                    <input type="radio" name="shareMode" value="exact">
+                    <span>Exact Salary Sync Link (Intended to share between your devices)</span>
+                </label>
+            </div>
+
+            <div id="exactShareWarning" class="warning-banner hidden">
+                Warning: This link contains your actual dollar values. Only share with devices you own.
+            </div>
+
+            <label id="exactConfirmLabel" class="confirmation-row hidden">
+                <input id="exactShareConfirm" type="checkbox">
+                <span>I understand this link exposes my exact salary</span>
+            </label>
+
+            <div class="modal-actions">
+                <button id="copyShareLinkButton" type="button">Copy Share Link</button>
+                <button id="copyExactLinkButton" type="button" class="danger-button" disabled>Copy Exact Link</button>
+            </div>
+
+            <p id="shareStatus" class="share-status hidden" aria-live="polite"></p>
+        </div>
     </div>
 </body>
 </html>
