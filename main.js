@@ -528,6 +528,12 @@ function showShareStatus(message) {
     }, 2200);
 }
 
+function formatSignedPercent(value) {
+    const numericValue = Number(value);
+    const sign = numericValue > 0 ? '+' : '';
+    return `${sign}${numericValue.toFixed(1)}%`;
+}
+
 function displayCombinedSalaryGraph(salaries, viewMode = currentViewMode) {
     if (!salaries || salaries.length === 0) {
         return;
@@ -574,7 +580,7 @@ function displayCombinedSalaryGraph(salaries, viewMode = currentViewMode) {
         const rawNoInflationValues = getEffectiveSalaryValues(startSalary, noInflationRange);
         noInflationSalary = noInflationSalary.concat(
             viewMode === 'normalized'
-                ? rawNoInflationValues.map(value => (value / firstSalaryAmount) * 100)
+                ? rawNoInflationValues.map(value => ((value / firstSalaryAmount) * 100) - 100)
                 : rawNoInflationValues
         );
 
@@ -583,7 +589,7 @@ function displayCombinedSalaryGraph(salaries, viewMode = currentViewMode) {
         const rawInflationValues = getEffectiveSalaryValues(adjustedBase, inflationRange);
         inflationAdjustedSalary = inflationAdjustedSalary.concat(
             viewMode === 'normalized'
-                ? rawInflationValues.map(value => (value / firstSalaryAmount) * 100)
+                ? rawInflationValues.map(value => ((value / firstSalaryAmount) * 100) - 100)
                 : rawInflationValues
         );
 
@@ -627,6 +633,19 @@ function displayCombinedSalaryGraph(salaries, viewMode = currentViewMode) {
                 intersect: false
             },
             spanGaps: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: (context) => {
+                            const value = Number(context.parsed.y);
+                            if (viewMode === 'normalized') {
+                                return `${context.dataset.label}: ${formatSignedPercent(value)}`;
+                            }
+                            return `${context.dataset.label}: $${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+                        }
+                    }
+                }
+            },
             scales: {
                 x: {
                     display: true,
@@ -636,9 +655,17 @@ function displayCombinedSalaryGraph(salaries, viewMode = currentViewMode) {
                 },
                 y: {
                     beginAtZero: false,
+                    ticks: {
+                        callback: (value) => {
+                            if (viewMode === 'normalized') {
+                                return formatSignedPercent(value);
+                            }
+                            return `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+                        }
+                    },
                     title: {
                         display: true,
-                        text: viewMode === 'normalized' ? 'Index (base = 100)' : 'Dollars'
+                        text: viewMode === 'normalized' ? 'Change vs first salary (%)' : 'Dollars'
                     }
                 }
             }
