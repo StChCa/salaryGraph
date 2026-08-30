@@ -45,20 +45,6 @@ input {
     flex-wrap: wrap;
 }
 
-.support-link-button {
-    background: #f8fafc;
-    color: #1e293b;
-    border: 1px solid #cbd5e1;
-    font-size: 0.82rem;
-    opacity: 0.9;
-    transition: opacity 0.2s ease;
-    white-space: nowrap;
-}
-
-.support-link-button:hover {
-    opacity: 1;
-}
-
 .support-link {
     color: #475569;
     text-decoration: none;

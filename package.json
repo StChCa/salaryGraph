@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
-    "start": "node main.js",
-    "debug": "node --inspect-brk main.js"
+    "start": "python3 -m http.server 8000",
+    "dev": "python3 -m http.server 8000",
+    "debug": "python3 -m http.server 8000"
   },
   "keywords": [],
   "author": "",

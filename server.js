@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 3000;
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const paypalClientId = process.env.PAYPAL_CLIENT_ID;
 const paypalSecret = process.env.PAYPAL_SECRET;
-const supportUrl = process.env.SUPPORT_URL || 'https://buymeacoffee.com';
+const supportUrl = process.env.SUPPORT_URL || 'https://www.buymeacoffee.com/truewage';
 
 app.use(express.json());
 app.use(express.static(__dirname));
@@ -31,8 +31,16 @@ function createPaypalClient() {
 
 function getSupportLink(amount) {
   const normalizedAmount = coerceSupportAmount(amount);
-  const encoded = encodeURIComponent(JSON.stringify({ amount: normalizedAmount, source: 'real-pay-tracker' }));
-  return `${supportUrl}?utm_source=real-pay-tracker&utm_medium=support&utm_amount=${normalizedAmount}&ref=${encoded}`;
+  const baseUrl = String(supportUrl).replace(/[?&]+$/, '');
+  const params = new URLSearchParams({
+    utm_source: 'real-pay-tracker',
+    utm_medium: 'support',
+    utm_amount: String(normalizedAmount),
+    source: 'real-pay-tracker',
+  });
+
+  const separator = baseUrl.includes('?') ? '&' : '?';
+  return `${baseUrl}${separator}${params.toString()}`;
 }
 
 app.get('/api/support', async (req, res) => {
@@ -43,6 +51,7 @@ app.get('/api/support', async (req, res) => {
       provider: 'link',
       url: getSupportLink(amount),
       amount,
+      configured: false,
       note: 'No payment keys are configured, so this falls back to a simple support link.',
     });
   }
@@ -80,9 +89,10 @@ app.get('/api/support', async (req, res) => {
         provider: 'paypal',
         url: approvalUrl || getSupportLink(amount),
         amount,
+        configured: true,
       });
     } catch (error) {
-      return res.json({ provider: 'link', url: getSupportLink(amount), amount, note: 'PayPal setup failed; falling back to support link.' });
+      return res.json({ provider: 'link', url: getSupportLink(amount), amount, configured: false, note: 'PayPal setup failed; falling back to support link.' });
     }
   }
 
@@ -106,13 +116,13 @@ app.get('/api/support', async (req, res) => {
         metadata: { source: 'real-pay-tracker', amount: String(amount) },
       });
 
-      return res.json({ provider: 'stripe', url: session.url, amount });
+      return res.json({ provider: 'stripe', url: session.url, amount, configured: true });
     } catch (error) {
-      return res.json({ provider: 'link', url: getSupportLink(amount), amount, note: 'Stripe setup failed; falling back to support link.' });
+      return res.json({ provider: 'link', url: getSupportLink(amount), amount, configured: false, note: 'Stripe setup failed; falling back to support link.' });
     }
   }
 
-  return res.json({ provider: 'link', url: getSupportLink(amount), amount });
+  return res.json({ provider: 'link', url: getSupportLink(amount), amount, configured: false });
 });
 
 app.get('/health', (req, res) => {

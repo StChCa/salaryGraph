@@ -127,33 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAll();
 });
 
-async function openSupportCheckout(provider) {
-    const amountInput = document.getElementById('supportAmount');
-    const amount = Number(amountInput.value || 5);
-    const supportStatus = document.getElementById('supportStatus');
-
-    try {
-        supportStatus.textContent = 'Preparing your support link…';
-        supportStatus.classList.remove('hidden');
-
-        const response = await fetch(`/api/support?provider=${encodeURIComponent(provider)}&amount=${encodeURIComponent(amount)}`);
-        if (!response.ok) {
-            throw new Error('Unable to create support checkout.');
-        }
-
-        const data = await response.json();
-        if (data && data.url) {
-            window.location.href = data.url;
-            return;
-        }
-
-        throw new Error('No support link returned.');
-    } catch (error) {
-        supportStatus.textContent = error.message || 'Something went wrong preparing support.';
-        supportStatus.style.color = '#991b1b';
-    }
-}
-
 function bindAppEvents() {
     document.querySelectorAll('input[name="salaryType"]').forEach(radio => {
         radio.addEventListener('change', updatePayTypeUi);
@@ -356,22 +329,6 @@ function bindAppEvents() {
 
     document.getElementById('closeShareModal').addEventListener('click', () => {
         document.getElementById('shareModal').classList.add('hidden');
-    });
-
-    document.getElementById('supportButton').addEventListener('click', () => {
-        document.getElementById('supportModal').classList.remove('hidden');
-    });
-
-    document.getElementById('closeSupportModal').addEventListener('click', () => {
-        document.getElementById('supportModal').classList.add('hidden');
-    });
-
-    document.getElementById('supportStripeButton').addEventListener('click', () => {
-        openSupportCheckout('stripe');
-    });
-
-    document.getElementById('supportPayPalButton').addEventListener('click', () => {
-        openSupportCheckout('paypal');
     });
 
     document.querySelectorAll('input[name="shareMode"]').forEach(radio => {

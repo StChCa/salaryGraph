@@ -18,7 +18,7 @@
                 <h4 id="salaryGraphSubtitle">Actual pay vs. inflation over time.</h4>
             </div>
             <div class="action-cluster">
-                <button id="supportButton" type="button" class="support-link-button" aria-label="Support this project">Support this project</button>
+                <a href="https://www.buymeacoffee.com/truewage" class="support-link" target="_blank" rel="noopener noreferrer">Support this project</a>
                 <button id="shareButton" type="button">Share</button>
                 <button id="clearDataButton" class="danger-button" type="button">Clear My Data</button>
             </div>
@@ -151,27 +151,5 @@
         </div>
     </div>
 
-    <div id="supportModal" class="modal hidden" aria-modal="true" role="dialog">
-        <div class="modal-card support-modal-card">
-            <div class="modal-header">
-                <h2>Support this project</h2>
-                <button id="closeSupportModal" type="button" aria-label="Close support dialog">×</button>
-            </div>
-
-            <p class="support-copy">This stays free to use. If it has helped you, a small contribution helps keep it simple and ad-free.</p>
-
-            <label class="support-field">
-                <span>Amount</span>
-                <input id="supportAmount" type="number" min="5" max="250" step="0.5" value="5">
-            </label>
-
-            <div class="support-provider-row">
-                <button id="supportStripeButton" type="button" class="support-provider-button">Pay with Stripe</button>
-                <button id="supportPayPalButton" type="button" class="secondary-button support-provider-button">Pay with PayPal</button>
-            </div>
-
-            <p id="supportStatus" class="share-status hidden" aria-live="polite"></p>
-        </div>
-    </div>
 </body>
 </html>
