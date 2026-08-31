@@ -8,6 +8,8 @@ const context = {
   CPI: {
     2020: { Jan: 100 },
     2023: { Jan: 124.6 },
+    2025: { Jan: 100 },
+    2026: { Aug: 130 },
   },
   document: {
     addEventListener() {},
@@ -109,9 +111,17 @@ function testSalaryStats() {
   assert.equal(stats.currentAnnualSalary, 70000);
   assert.equal(stats.totalChangePercent, 40);
   assert.equal(Math.round(stats.annualizedGrowthPercent * 10) / 10, 11.9);
-  assert.equal(Math.round(stats.inflationAdjustedChangePercent * 10) / 10, 12.4);
-  assert.equal(Math.round(stats.cumulativeInflationPercent * 10) / 10, 24.6);
-  assert.equal(Math.round(stats.inflationAdjustedAnnualizedGrowthPercent * 10) / 10, 4.0);
+  assert.equal(Math.round(stats.inflationAdjustedChangePercent * 10) / 10, 7.7);
+  assert.equal(Math.round(stats.cumulativeInflationPercent * 10) / 10, 30);
+  assert.equal(Math.round(stats.inflationAdjustedAnnualizedGrowthPercent * 10) / 10, 1.1);
+
+  const singleSalaryStats = context.calculateSalaryStats([
+    { startDate: '2025-01', amount: 40000, payType: 'salary' },
+  ]);
+
+  assert.equal(Math.round(singleSalaryStats.cumulativeInflationPercent * 10) / 10, 30);
+  assert.equal(Math.round(singleSalaryStats.inflationAdjustedChangePercent * 10) / 10, -23.1);
+  assert.equal(Math.round(singleSalaryStats.inflationAdjustedAnnualizedGrowthPercent * 10) / 10, -15.3);
 }
 
 function testClearConfirmationGuard() {

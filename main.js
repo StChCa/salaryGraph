@@ -1133,20 +1133,28 @@ function calculateSalaryStats(data) {
         : 0;
 
     const startCPI = getCPIForMonthValue(firstEntry.startDate);
-    const endCPI = getCPIForMonthValue(lastEntry.startDate);
-    const cumulativeInflationPercent = startCPI && endCPI
-        ? ((endCPI / startCPI) - 1) * 100
+    const latestCPIDate = getCurrentMonthString();
+    const latestCPI = getCPIForMonthValue(latestCPIDate);
+
+    const cumulativeInflationPercent = startCPI && latestCPI
+        ? ((latestCPI / startCPI) - 1) * 100
         : 0;
-    const inflationAdjustedChangePercent = startCPI && endCPI && firstAnnual > 0
-        ? (((currentAnnual / firstAnnual) / (endCPI / startCPI)) - 1) * 100
+
+    const inflationAdjustedCurrentAnnual = startCPI && latestCPI && currentAnnual > 0
+        ? currentAnnual * (startCPI / latestCPI)
+        : currentAnnual;
+
+    const yearsToLatest = Math.max(getYearsBetweenDates(firstEntry.startDate, latestCPIDate), 1 / 12);
+    const inflationAdjustedChangePercent = startCPI && latestCPI && firstAnnual > 0
+        ? ((inflationAdjustedCurrentAnnual / firstAnnual) - 1) * 100
         : 0;
-    const inflationAdjustedAnnualizedGrowthPercent = timeInYears > 0 && startCPI && endCPI && firstAnnual > 0
-        ? ((Math.pow((currentAnnual / firstAnnual) / (endCPI / startCPI), 1 / timeInYears) - 1) * 100)
+    const inflationAdjustedAnnualizedGrowthPercent = startCPI && latestCPI && firstAnnual > 0
+        ? ((Math.pow(inflationAdjustedCurrentAnnual / firstAnnual, 1 / yearsToLatest) - 1) * 100)
         : 0;
 
     const averageAnnualIncrease = timeInYears > 0 ? (currentAnnual - firstAnnual) / timeInYears : 0;
-    const realAnnualIncrease = timeInYears > 0 && startCPI && endCPI
-        ? averageAnnualIncrease / (endCPI / startCPI)
+    const realAnnualIncrease = startCPI && latestCPI && yearsToLatest > 0
+        ? (inflationAdjustedCurrentAnnual - firstAnnual) / yearsToLatest
         : 0;
 
     return {
@@ -1183,7 +1191,11 @@ function getCPIForMonthValue(dateString) {
         return null;
     }
 
-    return cpiForYearMonth(year, month);
+    const normalizedMonth = Number(month) >= 1 && Number(month) <= 12
+        ? MONTHS[Number(month) - 1]
+        : month;
+
+    return cpiForYearMonth(year, normalizedMonth);
 }
 
 function renderSalaryStats() {
@@ -1205,53 +1217,65 @@ function renderSalaryStats() {
         {
             label: 'Starting salary',
             value: formatCurrency(stats.startingAnnualSalary),
-            helper: 'first annualized salary'
+            helper: 'first annualized salary',
+            help: 'The first salary in your list, annualized into a yearly number so it matches later salary entries.'
         },
         {
             label: 'Current salary',
             value: formatCurrency(stats.currentAnnualSalary),
-            helper: 'latest annualized salary'
+            helper: 'latest annualized salary',
+            help: 'The most recent salary in your history, annualized so it is directly comparable to earlier years.'
         },
         {
             label: 'Total change',
             value: `${formatSignedPercent(stats.totalChangePercent)}`,
-            helper: 'vs first salary'
+            helper: 'vs first salary',
+            help: 'Percentage change from your first logged salary to your latest salary. This is purely nominal, before inflation.'
         },
         {
             label: 'Annualized growth',
             value: `${formatSignedPercent(stats.annualizedGrowthPercent)}`,
-            helper: 'nominal yearly increase'
+            helper: 'nominal yearly increase',
+            help: 'Average yearly percentage gain in salary, treating the whole change as a compound rate over time.'
         },
         {
             label: 'Real annualized growth',
             value: `${formatSignedPercent(stats.inflationAdjustedAnnualizedGrowthPercent)}`,
-            helper: 'after inflation, in start-year dollars'
+            helper: 'since first salary, adjusted to current CPI',
+            help: 'Formula: ((currentSalary × (startingCPI / currentCPI)) / startingSalary)^(1 / yearsSinceStart) - 1. This annualizes your salary growth after inflation by comparing your salary to the equivalent value in today’s dollars.'
         },
         {
             label: 'Inflation since start',
             value: `${formatSignedPercent(stats.cumulativeInflationPercent)}`,
-            helper: 'CPI increase'
+            helper: 'CPI increase',
+            help: 'How much prices have risen since your first salary date according to CPI. This is the inflation effect the salary growth has to overcome.'
         },
         {
             label: 'Real wage change',
             value: `${formatSignedPercent(stats.inflationAdjustedChangePercent)}`,
-            helper: 'buying power change, in start-year dollars'
+            helper: 'first salary vs today’s CPI-adjusted value',
+            help: 'Formula: ((currentSalary × (startingCPI / currentCPI)) / startingSalary) - 1. This shows the total change in salary after inflation, using today’s purchasing power to adjust the current salary back to the starting CPI.'
         },
         {
             label: 'Avg yearly raise (nominal)',
             value: formatCurrency(stats.averageAnnualIncrease),
-            helper: 'current dollars, before inflation'
+            helper: 'current dollars, before inflation',
+            help: 'Average annual raise in raw dollars, before accounting for inflation. This is the raise in nominal terms.'
         },
         {
             label: 'Real yearly raise',
             value: formatCurrency(stats.realAnnualIncrease),
-            helper: 'inflation-adjusted, in first-year dollars'
+            helper: 'inflation-adjusted, compared to start',
+            help: 'Average annual raise after inflation, expressed in today’s purchasing power relative to your starting salary.'
         }
     ];
 
     statsGrid.innerHTML = cards.map(card => `
         <div class="stat-card">
-            <div class="stat-label">${card.label}</div>
+            <div class="stat-header">
+                <div class="stat-label">${card.label}</div>
+                <button class="stat-info" type="button" aria-label="More about ${card.label}" title="${card.help}">i</button>
+            </div>
             <div class="stat-value">${card.value}</div>
             <div class="stat-helper">${card.helper}</div>
         </div>
@@ -1284,13 +1308,16 @@ function cpiHasValue(year, month) {
 
 function cpiForYearMonth(year, month) {
     const numericYear = Number(year);
+    const monthKey = typeof month === 'string' && month.length === 2 && /^\d{2}$/.test(month)
+        ? MONTHS[Number(month) - 1]
+        : month;
     const yearData = CPI[numericYear];
 
-    if (yearData && yearData[month] !== undefined) {
-        return yearData[month];
+    if (yearData && yearData[monthKey] !== undefined) {
+        return yearData[monthKey];
     }
 
-    const monthIndex = MONTHS.indexOf(month);
+    const monthIndex = MONTHS.indexOf(monthKey);
     if (yearData && monthIndex >= 0) {
         for (let i = monthIndex; i >= 0; i--) {
             const previousMonth = MONTHS[i];

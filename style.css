@@ -502,7 +502,26 @@ button:disabled {
 }
 
 .stats-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
     margin-bottom: 0;
+}
+
+.construction-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(217, 119, 6, 0.3);
+    background: rgba(245, 158, 11, 0.12);
+    color: #b45309;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    white-space: nowrap;
 }
 
 .stats-grid {
@@ -513,10 +532,18 @@ button:disabled {
 }
 
 .stat-card {
+    position: relative;
     background: var(--bg-soft);
     border: 1px solid var(--panel-border);
     border-radius: 10px;
     padding: 12px 14px;
+}
+
+.stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
 }
 
 .stat-label {
@@ -525,6 +552,24 @@ button:disabled {
     letter-spacing: 0.05em;
     text-transform: uppercase;
     font-weight: 700;
+}
+
+.stat-info {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid var(--panel-border);
+    background: var(--bg-elevated);
+    color: var(--text-strong);
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: help;
+    padding: 0;
 }
 
 .stat-value {
