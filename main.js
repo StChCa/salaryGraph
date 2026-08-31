@@ -370,6 +370,12 @@ function bindAppEvents() {
     });
 
     document.getElementById('copyShareLinkButton').addEventListener('click', () => {
+        const selectedMode = document.querySelector('input[name="shareMode"]:checked')?.value || 'anonymized';
+        if (selectedMode === 'site') {
+            copyShareLink('site');
+            return;
+        }
+
         copyShareLink(false);
     });
 
@@ -844,23 +850,39 @@ function updateShareUi() {
     const exactWarning = document.getElementById('exactShareWarning');
     const exactCheckbox = document.getElementById('exactShareConfirm');
     const exactButton = document.getElementById('copyExactLinkButton');
+    const genericButton = document.getElementById('copyShareLinkButton');
 
     const isExact = selectedMode === 'exact';
+    const isSite = selectedMode === 'site';
     exactWarning.classList.toggle('hidden', !isExact);
     exactCheckbox.closest('label').classList.toggle('hidden', !isExact);
     exactButton.disabled = !isExact || !exactCheckbox.checked;
 
-    document.getElementById('copyShareLinkButton').classList.toggle('hidden', isExact);
-    document.getElementById('copyExactLinkButton').classList.toggle('hidden', !isExact);
+    genericButton.textContent = isSite ? 'Copy Site Link' : 'Copy Share Link';
+    genericButton.classList.toggle('hidden', isExact);
+    exactButton.classList.toggle('hidden', !isExact);
 }
 
-async function copyShareLink(exactMode) {
-    const payload = serializeData(salaryData, exactMode ? false : true);
+async function copyShareLink(mode) {
     const shareUrl = new URL(window.location.href);
     shareUrl.hash = '';
     shareUrl.searchParams.delete('salaryData');
     shareUrl.searchParams.delete('shareMode');
     shareUrl.searchParams.delete('viewMode');
+
+    if (mode === 'site') {
+        try {
+            await navigator.clipboard.writeText(shareUrl.toString());
+            showShareStatus('Site link copied to clipboard.');
+        } catch (error) {
+            console.warn('Clipboard copy failed.', error);
+            showShareStatus('Clipboard access was blocked. Please copy the URL manually.');
+        }
+        return;
+    }
+
+    const exactMode = Boolean(mode);
+    const payload = serializeData(salaryData, exactMode ? false : true);
     shareUrl.searchParams.set('salaryData', payload);
     shareUrl.searchParams.set('shareMode', exactMode ? 'exact' : 'anonymized');
     shareUrl.searchParams.set('viewMode', exactMode ? 'dollar' : 'normalized');
