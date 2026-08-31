@@ -584,7 +584,7 @@ canvas {
     }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 900px) {
     .header-block {
         flex-direction: column;
         align-items: stretch;
@@ -662,8 +662,34 @@ canvas {
     }
 
     #cpi-salary-graph {
-        height: 42vh;
-        min-height: 240px;
-        max-height: 42vh;
+        height: 34vh;
+        min-height: 220px;
+        max-height: 34vh;
+    }
+}
+
+@media (max-width: 560px) {
+    .page-shell {
+        max-width: 100%;
+    }
+
+    .header-block h1 {
+        font-size: clamp(1.7rem, 8vw, 2.2rem);
+    }
+
+    .site-tagline {
+        font-size: 0.92rem;
+    }
+
+    .view-toggle {
+        display: grid;
+        width: 100%;
+        grid-template-columns: 1fr;
+    }
+
+    #cpi-salary-graph {
+        height: 30vh;
+        min-height: 200px;
+        max-height: 30vh;
     }
 }
