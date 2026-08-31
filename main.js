@@ -16,67 +16,67 @@ const Salaries = [
     {
         startDate: '2018-11-01',
         endDate: '2019-12-01',
-        salary: 35360,
+        salary: 30000,
     },
     {
         startDate: '2020-01-01',
         endDate: '2023-05-01',
-        salary: 42536,
+        salary: 40000,
     },
     {
         startDate: '2020-09-01',
         endDate: '2021-01-01',
-        salary: 52536,
+        salary: 42000,
     },
     {
         startDate: '2021-01-01',
         endDate: '2021-06-01',
-        salary: 54217.15,
+        salary: 50000,
     },
     {
         startDate: '2021-07-01',
         endDate: '2021-12-01',
-        salary: 80000,
+        salary: 51000,
     },
     {
         startDate: '2022-01-01',
         endDate: '2021-01-01',
-        salary: 83280,
+        salary: 56000,
     },
     {
         startDate: '2022-07-01',
         endDate: '2022-12-01',
-        salary: 93773.28,
+        salary: 45000,
     },
     {
         startDate: '2023-01-01',
         endDate: '2023-12-01',
-        salary: 98461.94,
+        salary: 56000,
     },
     {
         startDate: '2024-01-01',
         endDate: '2024-06-01',
-        salary: 102400.48,
+        salary: 62000,
     },
     {
         startDate: '2024-07-01',
         endDate: '2024-11-01',
-        salary: 105472.49,
+        salary: 70000,
     },
     {
         startDate: '2024-12-01',
         endDate: '2025-11-01',
-        salary: 109691.39,
+        salary: 80000,
     },
     {
         startDate: '2025-12-01',
         endDate: '2026-05-01',
-        salary: 113000.39,
+        salary: 85000,
     },
     {
         startDate: '2026-06-01',
         endDate: '2026-08-01',
-        salary: 124800.39,
+        salary: 86000,
     },
 ];
 */
