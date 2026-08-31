@@ -58,11 +58,6 @@
             </p>
         </section>
 
-        <div class="view-toggle" aria-label="Chart view toggle">
-            <button type="button" class="is-active" data-view="dollar">Dollar View</button>
-            <button type="button" data-view="normalized">Percentage / Normalized View</button>
-        </div>
-
         <div id="savePrompt" class="save-prompt hidden" role="alert">
             <span id="savePromptText">Save this salary history to this browser?</span>
             <div>
@@ -119,6 +114,11 @@
                 </div>
             </form>
         </section>
+
+        <div class="view-toggle chart-toggle" aria-label="Chart view toggle">
+            <button type="button" class="is-active" data-view="dollar">Dollar View</button>
+            <button type="button" data-view="normalized">Percentage / Normalized View</button>
+        </div>
 
         <div id="cpi-salary-graph">
             <canvas id="salaryGraph"></canvas>

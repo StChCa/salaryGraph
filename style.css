@@ -260,7 +260,11 @@ button:disabled {
     border-radius: 10px;
     padding: 6px;
     gap: 6px;
-    margin-bottom: 18px;
+    margin: 0 0 10px;
+}
+
+.chart-toggle {
+    margin-top: 0;
 }
 
 .view-toggle button {
