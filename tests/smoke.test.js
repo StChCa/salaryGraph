@@ -5,6 +5,10 @@ const vm = require('node:vm');
 const mainScript = fs.readFileSync('./main.js', 'utf8');
 const context = {
   console,
+  CPI: {
+    2020: { Jan: 100 },
+    2023: { Jan: 124.6 },
+  },
   document: {
     addEventListener() {},
     querySelectorAll() { return []; },
@@ -96,6 +100,20 @@ function testSupportAmountNormalization() {
   }
 }
 
+function testSalaryStats() {
+  const stats = context.calculateSalaryStats([
+    { startDate: '2020-01', amount: 50000, payType: 'salary' },
+    { startDate: '2023-01', amount: 70000, payType: 'salary' },
+  ]);
+
+  assert.equal(stats.currentAnnualSalary, 70000);
+  assert.equal(stats.totalChangePercent, 40);
+  assert.equal(Math.round(stats.annualizedGrowthPercent * 10) / 10, 11.9);
+  assert.equal(Math.round(stats.inflationAdjustedChangePercent * 10) / 10, 12.4);
+  assert.equal(Math.round(stats.cumulativeInflationPercent * 10) / 10, 24.6);
+  assert.equal(Math.round(stats.inflationAdjustedAnnualizedGrowthPercent * 10) / 10, 4.0);
+}
+
 function testClearConfirmationGuard() {
   const originalConfirm = context.window.confirm;
   let confirmCalls = 0;
@@ -117,6 +135,7 @@ try {
   testShareRoundTrip();
   testAnnualizedAmount();
   testSupportAmountNormalization();
+  testSalaryStats();
   testClearConfirmationGuard();
   console.log('smoke checks passed');
 } catch (error) {

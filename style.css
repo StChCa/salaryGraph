@@ -497,6 +497,49 @@ button:disabled {
     font-size: 1.05rem;
 }
 
+.stats-panel {
+    margin-top: 12px;
+}
+
+.stats-header {
+    margin-bottom: 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.stat-card {
+    background: var(--bg-soft);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 12px 14px;
+}
+
+.stat-label {
+    color: var(--muted);
+    font-size: 0.74rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.stat-value {
+    margin-top: 8px;
+    font-size: clamp(1.1rem, 2vw, 1.5rem);
+    font-weight: 700;
+    color: var(--text-strong);
+}
+
+.stat-helper {
+    margin-top: 6px;
+    color: var(--text-soft);
+    font-size: 0.82rem;
+}
+
 #salaryHistoryPanel.is-collapsed .salary-list {
     display: none;
 }

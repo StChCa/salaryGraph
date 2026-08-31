@@ -15,7 +15,7 @@
         <header class="header-block">
             <div class="title-block">
                 <h1>TrueWage.co</h1>
-                <p class="site-tagline">Track your pay against inflation to see whether your real income is actually growing.</p>
+                <p class="site-tagline">Track your pay against inflation to see how your true income is actually growing.</p>
                 <h4 id="salaryGraphSubtitle">Actual pay vs. inflation over time.</h4>
             </div>
             <div class="action-cluster">
@@ -53,7 +53,7 @@
             </div>
             <p>
                 This is a simple way to see how your pay changes over time.
-                It compares your salary growth against inflation so you can tell whether your money is really going up
+                It compares your salary growth against inflation so you can tell whether your income is really going up
                 in real life, not just on paper.
             </p>
         </section>
@@ -123,6 +123,13 @@
         <div id="cpi-salary-graph">
             <canvas id="salaryGraph"></canvas>
         </div>
+
+        <section id="salaryStatsPanel" class="panel stats-panel" aria-live="polite">
+            <div class="panel-header stats-header">
+                <h2>Salary stats</h2>
+            </div>
+            <div id="salaryStatsGrid" class="stats-grid"></div>
+        </section>
 
         <section id="salaryHistoryPanel" class="panel">
             <div class="panel-header">

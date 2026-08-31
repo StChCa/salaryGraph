@@ -442,6 +442,7 @@ function renderAll() {
     applyReadOnlyUi();
     if (!salaryData.length) {
         renderEmptyChartState();
+        renderSalaryStats();
         const subtitle = document.getElementById('salaryGraphSubtitle');
         if (subtitle) {
             subtitle.textContent = 'Add your first salary to start the chart.';
@@ -449,6 +450,7 @@ function renderAll() {
         return;
     }
     renderChart();
+    renderSalaryStats();
 }
 
 function renderEmptyChartState() {
@@ -912,6 +914,14 @@ function formatSignedPercent(value) {
     return `${sign}${numericValue.toFixed(1)}%`;
 }
 
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 0
+    }).format(Number(amount || 0));
+}
+
 function formatCompactCurrency(value) {
     const numericValue = Number(value);
     if (!Number.isFinite(numericValue)) {
@@ -1093,6 +1103,159 @@ function displayCombinedSalaryGraph(salaries, viewMode = currentViewMode) {
             }
         }
     });
+}
+
+function calculateSalaryStats(data) {
+    const safeData = sanitizeSalaryData(data || []);
+    if (!safeData.length) {
+        return {
+            startingAnnualSalary: 0,
+            currentAnnualSalary: 0,
+            totalChangePercent: 0,
+            annualizedGrowthPercent: 0,
+            inflationAdjustedChangePercent: 0,
+            inflationAdjustedAnnualizedGrowthPercent: 0,
+            cumulativeInflationPercent: 0,
+            averageAnnualIncrease: 0,
+            realAnnualIncrease: 0,
+        };
+    }
+
+    const firstEntry = safeData[0];
+    const lastEntry = safeData[safeData.length - 1];
+    const firstAnnual = getAnnualizedAmount(firstEntry) || 0;
+    const currentAnnual = getAnnualizedAmount(lastEntry) || 0;
+
+    const totalChangePercent = firstAnnual ? ((currentAnnual - firstAnnual) / firstAnnual) * 100 : 0;
+    const timeInYears = getYearsBetweenDates(firstEntry.startDate, lastEntry.startDate);
+    const annualizedGrowthPercent = timeInYears > 0 && firstAnnual > 0
+        ? ((Math.pow(currentAnnual / firstAnnual, 1 / timeInYears) - 1) * 100)
+        : 0;
+
+    const startCPI = getCPIForMonthValue(firstEntry.startDate);
+    const endCPI = getCPIForMonthValue(lastEntry.startDate);
+    const cumulativeInflationPercent = startCPI && endCPI
+        ? ((endCPI / startCPI) - 1) * 100
+        : 0;
+    const inflationAdjustedChangePercent = startCPI && endCPI && firstAnnual > 0
+        ? (((currentAnnual / firstAnnual) / (endCPI / startCPI)) - 1) * 100
+        : 0;
+    const inflationAdjustedAnnualizedGrowthPercent = timeInYears > 0 && startCPI && endCPI && firstAnnual > 0
+        ? ((Math.pow((currentAnnual / firstAnnual) / (endCPI / startCPI), 1 / timeInYears) - 1) * 100)
+        : 0;
+
+    const averageAnnualIncrease = timeInYears > 0 ? (currentAnnual - firstAnnual) / timeInYears : 0;
+    const realAnnualIncrease = timeInYears > 0 && startCPI && endCPI
+        ? averageAnnualIncrease / (endCPI / startCPI)
+        : 0;
+
+    return {
+        startingAnnualSalary: firstAnnual,
+        currentAnnualSalary: currentAnnual,
+        totalChangePercent,
+        annualizedGrowthPercent,
+        inflationAdjustedChangePercent,
+        inflationAdjustedAnnualizedGrowthPercent,
+        cumulativeInflationPercent,
+        averageAnnualIncrease,
+        realAnnualIncrease,
+    };
+}
+
+function getYearsBetweenDates(startDate, endDate) {
+    const start = new Date(`${startDate}-01T00:00:00Z`);
+    const end = new Date(`${endDate}-01T00:00:00Z`);
+    const monthsBetween = (end.getUTCFullYear() - start.getUTCFullYear()) * 12 + (end.getUTCMonth() - start.getUTCMonth());
+    return Math.max(monthsBetween / 12, 1 / 12);
+}
+
+function getCPIForMonthValue(dateString) {
+    if (!dateString || typeof dateString !== 'string') {
+        return null;
+    }
+
+    if (typeof CPI === 'undefined' || !CPI) {
+        return null;
+    }
+
+    const [year, month] = dateString.split('-');
+    if (!year || !month) {
+        return null;
+    }
+
+    return cpiForYearMonth(year, month);
+}
+
+function renderSalaryStats() {
+    const panel = document.getElementById('salaryStatsPanel');
+    const statsGrid = document.getElementById('salaryStatsGrid');
+    if (!panel || !statsGrid) {
+        return;
+    }
+
+    if (!salaryData.length) {
+        panel.classList.add('hidden');
+        return;
+    }
+
+    panel.classList.remove('hidden');
+
+    const stats = calculateSalaryStats(salaryData);
+    const cards = [
+        {
+            label: 'Starting salary',
+            value: formatCurrency(stats.startingAnnualSalary),
+            helper: 'first annualized salary'
+        },
+        {
+            label: 'Current salary',
+            value: formatCurrency(stats.currentAnnualSalary),
+            helper: 'latest annualized salary'
+        },
+        {
+            label: 'Total change',
+            value: `${formatSignedPercent(stats.totalChangePercent)}`,
+            helper: 'vs first salary'
+        },
+        {
+            label: 'Annualized growth',
+            value: `${formatSignedPercent(stats.annualizedGrowthPercent)}`,
+            helper: 'nominal yearly increase'
+        },
+        {
+            label: 'Real annualized growth',
+            value: `${formatSignedPercent(stats.inflationAdjustedAnnualizedGrowthPercent)}`,
+            helper: 'after inflation, in start-year dollars'
+        },
+        {
+            label: 'Inflation since start',
+            value: `${formatSignedPercent(stats.cumulativeInflationPercent)}`,
+            helper: 'CPI increase'
+        },
+        {
+            label: 'Real wage change',
+            value: `${formatSignedPercent(stats.inflationAdjustedChangePercent)}`,
+            helper: 'buying power change, in start-year dollars'
+        },
+        {
+            label: 'Avg yearly raise (nominal)',
+            value: formatCurrency(stats.averageAnnualIncrease),
+            helper: 'current dollars, before inflation'
+        },
+        {
+            label: 'Real yearly raise',
+            value: formatCurrency(stats.realAnnualIncrease),
+            helper: 'inflation-adjusted, in first-year dollars'
+        }
+    ];
+
+    statsGrid.innerHTML = cards.map(card => `
+        <div class="stat-card">
+            <div class="stat-label">${card.label}</div>
+            <div class="stat-value">${card.value}</div>
+            <div class="stat-helper">${card.helper}</div>
+        </div>
+    `).join('');
 }
 
 function renderChart() {
