@@ -1353,8 +1353,8 @@ function getCPIForRange(startYear, startMonth, endYear, endMonth) {
     const endMonthIdx = MONTHS.indexOf(endMonth);
 
     for (let i = startYear; i <= endYear; i++) {
-        let monthStart = (i === startYear) ? startMonthIdx : 0;
-        let monthEnd = (i === endYear) ? endMonthIdx : MONTHS.length - 1;
+        let monthStart = (String(i) === String(startYear)) ? startMonthIdx : 0;
+        let monthEnd = (String(i) === String(endYear)) ? endMonthIdx : MONTHS.length - 1;
 
         for (let j = monthStart; j <= monthEnd; j++) {
             const value = cpiForYearMonth(i, MONTHS[j]);
@@ -1377,8 +1377,8 @@ function getFixedCPIArray(startYear, startMonth, endYear, endMonth) {
     }
 
     for (let i = startYear; i <= endYear; i++) {
-        let monthStart = (i === startYear) ? startMonthIdx : 0;
-        let monthEnd = (i === endYear) ? endMonthIdx : MONTHS.length - 1;
+        let monthStart = (String(i) === String(startYear)) ? startMonthIdx : 0;
+        let monthEnd = (String(i) === String(endYear)) ? endMonthIdx : MONTHS.length - 1;
 
         for (let j = monthStart; j <= monthEnd; j++) {
             cpis.push(day1CPI);
@@ -1416,8 +1416,8 @@ function getEffectiveSalaryValues(startSalary, cpiForRange) {
 function getLabelsForRange(startYear, startMonth, endYear, endMonth) {
     const labels = [];
     for (let i = startYear; i <= endYear; i++) {
-        let monthStart = (i === startYear) ? MONTHS.indexOf(startMonth) : 0;
-        let monthEnd = (i === endYear) ? MONTHS.indexOf(endMonth) : MONTHS.length - 1;
+        let monthStart = (String(i) === String(startYear)) ? MONTHS.indexOf(startMonth) : 0;
+        let monthEnd = (String(i) === String(endYear)) ? MONTHS.indexOf(endMonth) : MONTHS.length - 1;
 
         for (let j = monthStart; j <= monthEnd; j++) {
             labels.push(`${i}|${MONTHS[j]}`);
@@ -1427,29 +1427,28 @@ function getLabelsForRange(startYear, startMonth, endYear, endMonth) {
 }
 
 function getAllCPI() {
-    const years = Object.keys(CPI);
-
-    const cpis = [];
-
-    years.forEach(year => {
-        MONTHS.forEach(month => {
-            cpis.push(CPI[year][month]);
-        });
-    });
-
-    return cpis;
+    return getAvailableCPIEntries().map(entry => entry.value);
 }
 
 function getAllCPILabels() {
-    const years = Object.keys(CPI);
+    return getAvailableCPIEntries().map(entry => `${entry.year}|${entry.month}`);
+}
 
-    const labels = [];
-    years.forEach(year => {
+function getAvailableCPIEntries() {
+    const maxMonth = getCurrentMonthString();
+    const entries = [];
+
+    Object.keys(CPI).forEach(year => {
         MONTHS.forEach(month => {
-            labels.push(`${year}|${month}`);
+            const monthNumber = String(MONTHS.indexOf(month) + 1).padStart(2, '0');
+            const value = CPI[year][month];
+            if (Number.isFinite(value) && `${year}-${monthNumber}` <= maxMonth) {
+                entries.push({ year, month, value });
+            }
         });
     });
-    return labels;
+
+    return entries;
 }
 
 function displayCPIGraph() {

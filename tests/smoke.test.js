@@ -124,6 +124,16 @@ function testSalaryStats() {
   assert.equal(Math.round(singleSalaryStats.inflationAdjustedAnnualizedGrowthPercent * 10) / 10, -15.3);
 }
 
+function testCPIGraphStopsAtAvailableCurrentMonth() {
+  const labels = context.getAllCPILabels();
+  const values = context.getAllCPI();
+
+  assert.equal(context.getLabelsForRange('2023', 'Jan', '2026', 'Aug').at(-1), '2026|Aug');
+  assert.equal(labels.at(-1), '2026|Aug');
+  assert.equal(values.at(-1), 130);
+  assert.equal(labels.length, values.length);
+}
+
 function testClearConfirmationGuard() {
   const originalConfirm = context.window.confirm;
   let confirmCalls = 0;
@@ -146,6 +156,7 @@ try {
   testAnnualizedAmount();
   testSupportAmountNormalization();
   testSalaryStats();
+  testCPIGraphStopsAtAvailableCurrentMonth();
   testClearConfirmationGuard();
   console.log('smoke checks passed');
 } catch (error) {
