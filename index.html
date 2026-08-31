@@ -33,8 +33,11 @@
             <button id="returnToMyDataButton" type="button" class="secondary-button">Return to my data</button>
         </div>
 
-        <section class="privacy-panel" aria-label="Data storage and privacy">
-            <h2>Your data stays in your browser unless you choose to share it</h2>
+        <section class="privacy-panel dismissible-card" data-dismissible-card aria-label="Data storage and privacy">
+            <div class="dismiss-row">
+                <h2>Your data stays in your browser unless you choose to share it</h2>
+                <span class="dismiss-hint">Tap to dismiss</span>
+            </div>
             <p>
                 This site saves your salary history in your browser using local storage on this device.
                 It is not sent to any server. The only way data leaves this site is by using the share button.
@@ -43,8 +46,11 @@
             </p>
         </section>
 
-        <section class="site-summary" aria-label="What this site does">
-            <p class="eyebrow">The point of this site</p>
+        <section class="site-summary dismissible-card" data-dismissible-card aria-label="What this site does">
+            <div class="dismiss-row">
+                <p class="eyebrow">The point of this site</p>
+                <span class="dismiss-hint">Tap to dismiss</span>
+            </div>
             <p>
                 This is a simple way to see how your pay changes over time.
                 It compares your salary growth against inflation so you can tell whether your money is really going up
@@ -65,7 +71,15 @@
             </div>
         </div>
 
-        <section class="panel">
+        <section class="panel" aria-labelledby="salaryFormHeading">
+            <div class="form-header">
+                <div>
+                    <p class="section-kicker">Salary log</p>
+                    <h2 id="salaryFormHeading">Add or edit salary</h2>
+                </div>
+                <p class="form-helper">Use this form to log a new salary or update an existing entry.</p>
+            </div>
+
             <form id="salaryForm">
                 <input type="hidden" id="salaryId" value="">
 

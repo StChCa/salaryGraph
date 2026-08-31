@@ -131,6 +131,22 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function bindAppEvents() {
+    document.querySelectorAll('[data-dismissible-card]').forEach(card => {
+        card.addEventListener('click', () => {
+            card.classList.add('is-dismissed');
+        });
+
+        card.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                card.classList.add('is-dismissed');
+            }
+        });
+
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('role', 'button');
+    });
+
     document.getElementById('themeToggleButton')?.addEventListener('click', () => {
         currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
         applyTheme(currentTheme);
