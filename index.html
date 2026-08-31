@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Real Pay Tracker</title>
+    <title>TrueWage.co</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -13,14 +13,18 @@
 
     <main class="page-shell">
         <header class="header-block">
-            <div>
-                <h1>Real Pay Tracker</h1>
+            <div class="title-block">
+                <h1>TrueWage.co</h1>
+                <p class="site-tagline">Track your pay against inflation to see whether your real earnings are actually growing.</p>
                 <h4 id="salaryGraphSubtitle">Actual pay vs. inflation over time.</h4>
             </div>
             <div class="action-cluster">
-                <a href="https://www.buymeacoffee.com/truewage" class="support-link" target="_blank" rel="noopener noreferrer">Support this ad free project</a>
-                <button id="shareButton" type="button">Share</button>
-                <button id="clearDataButton" class="danger-button" type="button">Clear My Data</button>
+                <div class="primary-action-group">
+                    <a href="https://www.buymeacoffee.com/truewage" class="support-link" target="_blank" rel="noopener noreferrer">Support</a>
+                    <button id="shareButton" type="button">Share</button>
+                    <button id="clearDataButton" class="danger-button" type="button">Clear My Data</button>
+                </div>
+                <button id="themeToggleButton" type="button" class="secondary-button theme-toggle" aria-label="Toggle dark mode">Dark mode</button>
             </div>
         </header>
 

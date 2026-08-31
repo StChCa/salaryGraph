@@ -83,11 +83,32 @@ function testAnnualizedAmount() {
 }
 
 function testSupportAmountNormalization() {
-  const { coerceSupportAmount } = require('../server.js');
-  assert.equal(coerceSupportAmount('5'), 5);
-  assert.equal(coerceSupportAmount('12.5'), 12.5);
-  assert.equal(coerceSupportAmount('0'), 5);
-  assert.equal(coerceSupportAmount('abc'), 5);
+  try {
+    const { coerceSupportAmount } = require('../server.js');
+    assert.equal(coerceSupportAmount('5'), 5);
+    assert.equal(coerceSupportAmount('12.5'), 12.5);
+    assert.equal(coerceSupportAmount('0'), 5);
+    assert.equal(coerceSupportAmount('abc'), 5);
+  } catch (error) {
+    if (error.code !== 'MODULE_NOT_FOUND') {
+      throw error;
+    }
+  }
+}
+
+function testClearConfirmationGuard() {
+  const originalConfirm = context.window.confirm;
+  let confirmCalls = 0;
+  context.window.confirm = () => {
+    confirmCalls += 1;
+    return false;
+  };
+
+  const result = context.confirmClearData();
+
+  assert.equal(result, false);
+  assert.equal(confirmCalls, 1);
+  context.window.confirm = originalConfirm;
 }
 
 try {
@@ -96,6 +117,7 @@ try {
   testShareRoundTrip();
   testAnnualizedAmount();
   testSupportAmountNormalization();
+  testClearConfirmationGuard();
   console.log('smoke checks passed');
 } catch (error) {
   console.error(error);

@@ -1,3 +1,55 @@
+:root {
+    --bg: #f4f7fb;
+    --bg-elevated: #ffffff;
+    --bg-soft: #eff6ff;
+    --bg-accent: #e2e8f0;
+    --panel-border: #e5e7eb;
+    --card-border: #dbe2ea;
+    --text: #1f2937;
+    --text-soft: #4b5563;
+    --text-strong: #111827;
+    --primary: #2563eb;
+    --primary-soft: #dbeafe;
+    --success: #16a34a;
+    --warning-bg: #fff3cd;
+    --warning-text: #7a5200;
+    --warning-border: #ffb703;
+    --shadow: rgba(15, 23, 42, 0.08);
+    --chart-surface: #ffffff;
+    --chart-grid: rgba(148, 163, 184, 0.32);
+    --button-text: #ffffff;
+    --secondary-button-bg: #e5e7eb;
+    --secondary-button-text: #111827;
+    --muted: #6b7280;
+    --empty-graph-bg: rgba(15, 23, 42, 0.06);
+}
+
+body[data-theme="dark"] {
+    --bg: #020817;
+    --bg-elevated: #0b1220;
+    --bg-soft: #111827;
+    --bg-accent: #172033;
+    --panel-border: #243247;
+    --card-border: #2d3b4f;
+    --text: #e2e8f0;
+    --text-soft: #cbd5e1;
+    --text-strong: #f8fafc;
+    --primary: #3b82f6;
+    --primary-soft: rgba(59, 130, 246, 0.18);
+    --success: #4ade80;
+    --warning-bg: rgba(120, 93, 40, 0.25);
+    --warning-text: #f6d98c;
+    --warning-border: #fbbf24;
+    --shadow: rgba(2, 8, 23, 0.58);
+    --chart-surface: #01060d;
+    --chart-grid: rgba(148, 163, 184, 0.2);
+    --button-text: #eaf3ff;
+    --secondary-button-bg: #1d2a3a;
+    --secondary-button-text: #f8fafc;
+    --muted: #9ca3af;
+    --empty-graph-bg: rgba(2, 8, 23, 0.92);
+}
+
 * {
     box-sizing: border-box;
 }
@@ -6,8 +58,8 @@ body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 24px 16px 48px;
-    background: #f4f7fb;
-    color: #1f2937;
+    background: var(--bg);
+    color: var(--text);
 }
 
 button,
@@ -28,30 +80,80 @@ input {
     margin-bottom: 16px;
 }
 
+.title-block {
+    min-width: 0;
+    flex: 1;
+}
+
 .header-block h1 {
     margin: 0;
     font-size: clamp(2rem, 2.5vw, 2.7rem);
+    color: var(--text-strong);
+}
+
+.site-tagline {
+    margin: 8px 0 0;
+    color: var(--text-soft);
+    font-size: 0.98rem;
+    max-width: 640px;
+    line-height: 1.5;
 }
 
 .header-block h4 {
-    margin: 8px 0 0;
-    color: #4b5563;
+    margin: 12px 0 0;
+    color: var(--text-soft);
 }
 
 .action-cluster {
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: flex-end;
+    gap: 12px;
     flex-wrap: wrap;
 }
 
+.primary-action-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 6px;
+    border-radius: 12px;
+    background: var(--bg-accent);
+    border: 1px solid var(--panel-border);
+}
+
+.primary-action-group .support-link {
+    order: 1;
+}
+
+.primary-action-group #shareButton {
+    order: 2;
+}
+
+.primary-action-group #clearDataButton {
+    order: 3;
+}
+
+.theme-toggle {
+    min-width: 108px;
+}
+
 .support-link {
-    color: #475569;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-soft);
     text-decoration: none;
     font-size: 0.82rem;
     opacity: 0.8;
     transition: opacity 0.2s ease;
     white-space: nowrap;
+    min-height: 40px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--panel-border);
 }
 
 .support-link:hover {
@@ -62,8 +164,8 @@ input {
 button {
     border: 0;
     border-radius: 8px;
-    background: #2563eb;
-    color: #fff;
+    background: var(--primary);
+    color: var(--button-text);
     padding: 10px 16px;
     cursor: pointer;
     transition: opacity 0.2s ease;
@@ -79,22 +181,23 @@ button:disabled {
 }
 
 .secondary-button {
-    background: #e5e7eb;
-    color: #111827;
+    background: var(--secondary-button-bg);
+    color: var(--secondary-button-text);
 }
 
 .danger-button {
     background: #dc2626;
+    color: #fff;
 }
 
 .privacy-panel,
 .site-summary {
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
+    background: var(--bg-soft);
+    border: 1px solid var(--panel-border);
     border-radius: 12px;
     padding: 16px 18px;
     margin: 0 0 18px;
-    color: #1e3a8a;
+    color: var(--text);
 }
 
 .privacy-panel h2 {
@@ -123,7 +226,7 @@ button:disabled {
 
 .view-toggle {
     display: inline-flex;
-    background: #e2e8f0;
+    background: var(--bg-accent);
     border-radius: 10px;
     padding: 6px;
     gap: 6px;
@@ -132,14 +235,14 @@ button:disabled {
 
 .view-toggle button {
     background: transparent;
-    color: #334155;
+    color: var(--text-soft);
     border-radius: 8px;
     padding: 8px 12px;
 }
 
 .view-toggle button.is-active {
-    background: #ffffff;
-    color: #111827;
+    background: var(--bg-elevated);
+    color: var(--text-strong);
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
 }
 
@@ -189,17 +292,17 @@ button:disabled {
 }
 
 .panel {
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
+    background: var(--bg-elevated);
+    border: 1px solid var(--panel-border);
     border-radius: 12px;
     padding: 18px;
     margin-bottom: 20px;
-    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+    box-shadow: 0 2px 10px var(--shadow);
 }
 
 .pay-type-group {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
     grid-column: 1 / -1;
     margin-bottom: 8px;
@@ -208,12 +311,14 @@ button:disabled {
 .pay-type-option {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
-    border: 1px solid #dbe2ea;
+    border: 1px solid var(--card-border);
     border-radius: 999px;
     padding: 8px 14px;
-    background: #f8fafc;
+    background: var(--bg-soft);
     font-weight: 600;
+    min-height: 48px;
 }
 
 #salaryForm {
@@ -223,6 +328,12 @@ button:disabled {
     align-items: end;
     border-radius: 12px;
     transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+#salaryForm input,
+#salaryForm select {
+    background: var(--bg-elevated);
+    color: var(--text-strong);
 }
 
 #salaryForm.is-editing {
@@ -240,10 +351,11 @@ button:disabled {
 
 #salaryForm input,
 .salary-row input {
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--card-border);
     border-radius: 8px;
     padding: 10px 12px;
-    background: #fff;
+    background: var(--bg-elevated);
+    color: var(--text-strong);
 }
 
 .form-actions {
@@ -264,8 +376,8 @@ button:disabled {
     gap: 10px;
     align-items: center;
     padding: 10px 12px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    background: var(--bg-soft);
+    border: 1px solid var(--panel-border);
     border-radius: 10px;
 }
 
@@ -332,8 +444,8 @@ button:disabled {
     width: 100%;
     height: min(70vh, 520px);
     max-height: 70vh;
-    background: #fff;
-    border: 1px solid #e5e7eb;
+    background: var(--chart-surface);
+    border: 1px solid var(--panel-border);
     border-radius: 12px;
     padding: 12px;
 }
@@ -342,6 +454,8 @@ canvas {
     width: 100% !important;
     height: 100% !important;
     display: block;
+    background: var(--chart-surface);
+    border-radius: 8px;
 }
 
 .modal {
@@ -356,7 +470,8 @@ canvas {
 
 .modal-card {
     width: min(100%, 560px);
-    background: #fff;
+    background: var(--bg-elevated);
+    border: 1px solid var(--panel-border);
     border-radius: 14px;
     padding: 20px;
     box-shadow: 0 12px 30px rgba(15, 23, 42, 0.2);
@@ -375,7 +490,7 @@ canvas {
 
 #closeShareModal {
     background: transparent;
-    color: #1f2937;
+    color: var(--text-strong);
     font-size: 1.8rem;
     padding: 4px 8px;
 }
@@ -390,10 +505,10 @@ canvas {
     display: flex;
     align-items: center;
     gap: 10px;
-    border: 1px solid #dbe2ea;
+    border: 1px solid var(--card-border);
     border-radius: 10px;
     padding: 12px 14px;
-    background: #f8fafc;
+    background: var(--bg-soft);
 }
 
 .warning-banner {
@@ -466,7 +581,46 @@ canvas {
 @media (max-width: 720px) {
     .header-block {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
+    }
+
+    .action-cluster {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .primary-action-group {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .primary-action-group .support-link {
+        order: 3;
+    }
+
+    .primary-action-group #shareButton {
+        order: 1;
+    }
+
+    .primary-action-group #clearDataButton {
+        order: 2;
+    }
+
+    .primary-action-group > * {
+        width: 100%;
+    }
+
+    .support-link {
+        text-align: center;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: var(--bg-elevated);
+        display: flex;
+        width: 100%;
     }
 
     .view-only-banner {
@@ -476,6 +630,14 @@ canvas {
 
     .view-only-banner button {
         width: 100%;
+    }
+
+    .pay-type-group {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .pay-type-option:last-child {
+        grid-column: 1 / -1;
     }
 
     #salaryForm, .salary-row {

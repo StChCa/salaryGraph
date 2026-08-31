@@ -9,6 +9,7 @@ let currentViewMode = 'dollar';
 let currentChart = null;
 let isSharedSnapshotMode = false;
 let pendingSharedData = [];
+let currentTheme = 'light';
 
 /*
 const Salaries = [
@@ -97,6 +98,8 @@ const starterSalaryData = [
 ];
 
 document.addEventListener('DOMContentLoaded', () => {
+    currentTheme = getStoredTheme();
+    applyTheme(currentTheme);
     bindAppEvents();
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -128,6 +131,11 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function bindAppEvents() {
+    document.getElementById('themeToggleButton')?.addEventListener('click', () => {
+        currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        applyTheme(currentTheme);
+    });
+
     document.querySelectorAll('input[name="salaryType"]').forEach(radio => {
         radio.addEventListener('change', updatePayTypeUi);
     });
@@ -279,6 +287,10 @@ function bindAppEvents() {
     });
 
     document.getElementById('clearDataButton').addEventListener('click', () => {
+        if (!confirmClearData()) {
+            return;
+        }
+
         localStorage.removeItem(STORAGE_KEY);
         salaryData = [];
         resetSalaryForm();
@@ -350,8 +362,33 @@ function bindAppEvents() {
     });
 }
 
+function confirmClearData() {
+    return window.confirm('Clear all saved salary data from this browser? This cannot be undone.');
+}
+
 function createId() {
     return `salary-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+}
+
+function getStoredTheme() {
+    const savedTheme = localStorage.getItem('truewage-theme');
+    if (savedTheme === 'dark' || savedTheme === 'light') {
+        return savedTheme;
+    }
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function applyTheme(theme) {
+    currentTheme = theme === 'dark' ? 'dark' : 'light';
+    document.body.setAttribute('data-theme', currentTheme);
+    if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('truewage-theme', currentTheme);
+    }
+    const toggleButton = document.getElementById('themeToggleButton');
+    if (toggleButton) {
+        toggleButton.textContent = currentTheme === 'dark' ? 'Light mode' : 'Dark mode';
+        toggleButton.setAttribute('aria-label', currentTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+    }
 }
 
 function resetSalaryForm() {
@@ -382,15 +419,7 @@ function renderAll() {
     renderViewButtons();
     applyReadOnlyUi();
     if (!salaryData.length) {
-        const ctx = document.getElementById('salaryGraph');
-        if (ctx && currentChart) {
-            currentChart.destroy();
-            currentChart = null;
-        }
-        if (ctx) {
-            const existingCanvas = ctx.getContext('2d');
-            existingCanvas.clearRect(0, 0, ctx.width, ctx.height);
-        }
+        renderEmptyChartState();
         const subtitle = document.getElementById('salaryGraphSubtitle');
         if (subtitle) {
             subtitle.textContent = 'Add your first salary to start the chart.';
@@ -398,6 +427,51 @@ function renderAll() {
         return;
     }
     renderChart();
+}
+
+function renderEmptyChartState() {
+    const canvas = document.getElementById('salaryGraph');
+    if (!canvas) {
+        return;
+    }
+
+    if (currentChart) {
+        currentChart.destroy();
+        currentChart = null;
+    }
+
+    const context = canvas.getContext('2d');
+    const chartSurface = currentTheme === 'dark' ? '#000000' : '#0f172a';
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = chartSurface;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    context.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+    context.lineWidth = 1;
+    const gridLines = 5;
+    for (let i = 0; i <= gridLines; i += 1) {
+        const y = (canvas.height / gridLines) * i;
+        context.beginPath();
+        context.moveTo(0, y);
+        context.lineTo(canvas.width, y);
+        context.stroke();
+    }
+
+    for (let i = 0; i <= gridLines; i += 1) {
+        const x = (canvas.width / gridLines) * i;
+        context.beginPath();
+        context.moveTo(x, 0);
+        context.lineTo(x, canvas.height);
+        context.stroke();
+    }
+
+    context.fillStyle = 'rgba(255, 255, 255, 0.75)';
+    context.font = '600 18px Arial';
+    context.textAlign = 'center';
+    context.fillText('Your chart will appear here', canvas.width / 2, canvas.height / 2 - 4);
+    context.font = '400 12px Arial';
+    context.fillStyle = 'rgba(255, 255, 255, 0.56)';
+    context.fillText('Log a salary to start comparing pay to inflation', canvas.width / 2, canvas.height / 2 + 22);
 }
 
 function applyReadOnlyUi() {
