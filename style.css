@@ -444,6 +444,7 @@ button:disabled {
     width: 100%;
     height: min(70vh, 520px);
     max-height: 70vh;
+    min-height: 280px;
     background: var(--chart-surface);
     border: 1px solid var(--panel-border);
     border-radius: 12px;
@@ -653,5 +654,11 @@ canvas {
     .modal-actions {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    #cpi-salary-graph {
+        height: 42vh;
+        min-height: 240px;
+        max-height: 42vh;
     }
 }
