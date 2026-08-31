@@ -276,6 +276,13 @@ function bindAppEvents() {
             return;
         }
 
+        if (field === 'includeInGraph') {
+            entry.includeInGraph = Boolean(target.checked);
+            saveToLocalStorage(salaryData);
+            renderAll();
+            return;
+        }
+
         if (document.getElementById('salaryId').value !== id) {
             event.preventDefault();
             target.value = getOriginalListValue(entry, field);
@@ -440,12 +447,22 @@ function renderAll() {
     renderSalaryList();
     renderViewButtons();
     applyReadOnlyUi();
+    const includedSalaryData = getIncludedSalaryData(salaryData);
     if (!salaryData.length) {
         renderEmptyChartState();
         renderSalaryStats();
         const subtitle = document.getElementById('salaryGraphSubtitle');
         if (subtitle) {
             subtitle.textContent = 'Add your first salary to start the chart.';
+        }
+        return;
+    }
+    if (!includedSalaryData.length) {
+        renderEmptyChartState();
+        renderSalaryStats();
+        const subtitle = document.getElementById('salaryGraphSubtitle');
+        if (subtitle) {
+            subtitle.textContent = 'Enable at least one salary below to include it in the chart.';
         }
         return;
     }
@@ -633,6 +650,7 @@ function normalizeSalaryEntry(entry, index) {
         amount,
         payType: normalizedPayType,
         hoursPerWeek: normalizedPayType === 'hourly_part_time' ? normalizeHoursValue(entry.hoursPerWeek) : null,
+        includeInGraph: entry.includeInGraph !== false,
     };
 }
 
@@ -667,6 +685,14 @@ function sortSalaryData(data) {
         const dateB = new Date(`${b.startDate}-01T00:00:00Z`);
         return dateA - dateB;
     });
+}
+
+function isEntryIncludedInGraph(entry) {
+    return entry && typeof entry === 'object' ? entry.includeInGraph !== false : true;
+}
+
+function getIncludedSalaryData(data) {
+    return sanitizeSalaryData(data || []).filter(isEntryIncludedInGraph);
 }
 
 function getSelectedPayType() {
@@ -741,6 +767,10 @@ function renderSalaryList() {
             </select>
             <input type="number" min="0" step="0.01" data-id="${entry.id}" data-field="amount" value="${Number(entry.amount).toFixed(2)}" aria-label="Salary amount" ${isSharedSnapshotMode ? 'disabled' : ''}>
             ${entry.payType === 'hourly_part_time' ? `<input type="number" min="1" step="0.5" data-id="${entry.id}" data-field="hoursPerWeek" value="${Number(entry.hoursPerWeek || 0).toFixed(1)}" aria-label="Hours per week" ${isSharedSnapshotMode ? 'disabled' : ''}>` : '<span class="muted-label">-</span>'}
+            <label class="include-toggle" aria-label="Include ${entry.startDate} in graph and stats">
+                <input type="checkbox" data-id="${entry.id}" data-field="includeInGraph" ${isEntryIncludedInGraph(entry) ? 'checked' : ''} ${isSharedSnapshotMode ? 'disabled' : ''}>
+                <span>Include</span>
+            </label>
             <div class="salary-actions">
                 <button type="button" data-action="edit" data-id="${entry.id}" ${isSharedSnapshotMode ? 'disabled' : ''}>Edit</button>
                 <button type="button" class="delete-button" data-action="delete" data-id="${entry.id}" ${isSharedSnapshotMode ? 'disabled' : ''}>Delete</button>
@@ -945,11 +975,12 @@ function formatCompactCurrency(value) {
 }
 
 function displayCombinedSalaryGraph(salaries, viewMode = currentViewMode) {
-    if (!salaries || salaries.length === 0) {
+    const activeSalaries = getIncludedSalaryData(salaries || []);
+    if (!activeSalaries || activeSalaries.length === 0) {
         return;
     }
 
-    const sortedSalaries = sortSalaryData(salaries);
+    const sortedSalaries = sortSalaryData(activeSalaries);
     let noInflationSalary = [];
     let inflationAdjustedSalary = [];
     let rangeLabels = [];
@@ -1106,7 +1137,7 @@ function displayCombinedSalaryGraph(salaries, viewMode = currentViewMode) {
 }
 
 function calculateSalaryStats(data) {
-    const safeData = sanitizeSalaryData(data || []);
+    const safeData = getIncludedSalaryData(data || []);
     if (!safeData.length) {
         return {
             startingAnnualSalary: 0,
@@ -1205,14 +1236,15 @@ function renderSalaryStats() {
         return;
     }
 
-    if (!salaryData.length) {
+    const includedSalaryData = getIncludedSalaryData(salaryData);
+    if (!salaryData.length || !includedSalaryData.length) {
         panel.classList.add('hidden');
         return;
     }
 
     panel.classList.remove('hidden');
 
-    const stats = calculateSalaryStats(salaryData);
+    const stats = calculateSalaryStats(includedSalaryData);
     const cards = [
         {
             label: 'Starting salary',
@@ -1283,7 +1315,7 @@ function renderSalaryStats() {
 }
 
 function renderChart() {
-    displayCombinedSalaryGraph(salaryData, currentViewMode);
+    displayCombinedSalaryGraph(getIncludedSalaryData(salaryData), currentViewMode);
 }
 
 function addMonthsToDateString(dateString, months) {

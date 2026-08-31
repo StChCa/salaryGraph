@@ -88,6 +88,27 @@ function testAnnualizedAmount() {
   assert.equal(context.getAnnualizedAmount({ amount: 20, payType: 'hourly_part_time', hoursPerWeek: 25 }), 26000);
 }
 
+function testIncludedSalaryDataFiltersDisabledEntries() {
+  const included = context.getIncludedSalaryData([
+    { id: 'keep', startDate: '2020-01', amount: 50000, payType: 'salary' },
+    { id: 'drop', startDate: '2023-01', amount: 70000, payType: 'salary', includeInGraph: false },
+    { id: 'keep-2', startDate: '2025-01', amount: 90000, payType: 'salary' },
+  ]);
+
+  const includedIds = included.map(entry => entry.id);
+  assert.equal(includedIds.length, 2);
+  assert.equal(includedIds[0], 'keep');
+  assert.equal(includedIds[1], 'keep-2');
+
+  const stats = context.calculateSalaryStats([
+    { id: 'keep', startDate: '2020-01', amount: 50000, payType: 'salary' },
+    { id: 'drop', startDate: '2023-01', amount: 70000, payType: 'salary', includeInGraph: false },
+  ]);
+
+  assert.equal(stats.currentAnnualSalary, 50000);
+  assert.equal(stats.totalChangePercent, 0);
+}
+
 function testSupportAmountNormalization() {
   try {
     const { coerceSupportAmount } = require('../server.js');
@@ -154,6 +175,7 @@ try {
   testSanitizeSalaryData();
   testShareRoundTrip();
   testAnnualizedAmount();
+  testIncludedSalaryDataFiltersDisabledEntries();
   testSupportAmountNormalization();
   testSalaryStats();
   testCPIGraphStopsAtAvailableCurrentMonth();
