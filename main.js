@@ -890,6 +890,28 @@ function formatSignedPercent(value) {
     return `${sign}${numericValue.toFixed(1)}%`;
 }
 
+function formatCompactCurrency(value) {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+        return '$0';
+    }
+
+    const prefix = numericValue < 0 ? '-' : '';
+    const absValue = Math.abs(numericValue);
+
+    if (absValue < 1000) {
+        return `${prefix}$${absValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    }
+
+    const compactValue = new Intl.NumberFormat('en-US', {
+        notation: 'compact',
+        maximumFractionDigits: 1,
+        minimumFractionDigits: 0
+    }).format(absValue).replace(/K$/i, 'k');
+
+    return `${prefix}$${compactValue}`;
+}
+
 function displayCombinedSalaryGraph(salaries, viewMode = currentViewMode) {
     if (!salaries || salaries.length === 0) {
         return;
@@ -990,6 +1012,14 @@ function displayCombinedSalaryGraph(salaries, viewMode = currentViewMode) {
                 intersect: false
             },
             spanGaps: true,
+            layout: {
+                padding: {
+                    left: 4,
+                    right: 8,
+                    top: 8,
+                    bottom: 0
+                }
+            },
             plugins: {
                 tooltip: {
                     callbacks: {
@@ -1007,24 +1037,35 @@ function displayCombinedSalaryGraph(salaries, viewMode = currentViewMode) {
                 x: {
                     display: true,
                     ticks: {
-                        maxTicksLimit: 12
+                        maxTicksLimit: 10,
+                        autoSkip: true,
+                        maxRotation: 0,
+                        minRotation: 0
                     }
                 },
                 y: {
                     beginAtZero: false,
+                    grace: '8%',
                     ticks: {
+                        maxTicksLimit: 6,
+                        padding: 2,
+                        autoSkip: true,
+                        font: {
+                            size: window.innerWidth < 560 ? 10 : 11
+                        },
                         callback: (value) => {
                             if (viewMode === 'normalized') {
                                 return formatSignedPercent(value);
                             }
-                            return `$${Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+                            return formatCompactCurrency(value);
                         }
                     },
                     title: {
-                        display: true,
+                        display: false,
                         text: viewMode === 'normalized'
                             ? `Percent change vs ${firstSalaryMonthLabel}`
-                            : 'Dollars'
+                            : 'Dollars',
+                        padding: { top: 0, bottom: 8 }
                     }
                 }
             }

@@ -508,9 +508,9 @@ button:disabled {
 
 #cpi-salary-graph {
     width: 100%;
-    height: min(70vh, 520px);
-    max-height: 70vh;
-    min-height: 280px;
+    height: min(76vh, 620px);
+    max-height: 76vh;
+    min-height: 360px;
     background: var(--chart-surface);
     border: 1px solid var(--panel-border);
     border-radius: 12px;
@@ -723,9 +723,9 @@ canvas {
     }
 
     #cpi-salary-graph {
-        height: 34vh;
-        min-height: 220px;
-        max-height: 34vh;
+        height: 48vh;
+        min-height: 280px;
+        max-height: 48vh;
     }
 }
 
@@ -749,8 +749,8 @@ canvas {
     }
 
     #cpi-salary-graph {
-        height: 30vh;
-        min-height: 200px;
-        max-height: 30vh;
+        height: 54vh;
+        min-height: 300px;
+        max-height: 54vh;
     }
 }
